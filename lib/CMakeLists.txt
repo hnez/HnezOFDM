@@ -26,6 +26,12 @@ include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
 
 list(APPEND hnez_ofdm_sources
+    ho_add_header_impl.cc
+    ho_fec_impl.cc
+    ho_interleave_impl.cc
+    ho_assign_carriers_impl.cc
+    ho_cyclicprefix_impl.cc
+    ho_pdu_to_stream_async_impl.cc
 )
 
 set(hnez_ofdm_sources "${hnez_ofdm_sources}" PARENT_SCOPE)

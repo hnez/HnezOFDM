@@ -22,5 +22,10 @@
 ########################################################################
 install(FILES
     api.h
-    DESTINATION include/hnez_ofdm
+    ho_add_header.h
+    ho_fec.h
+    ho_interleave.h
+    ho_assign_carriers.h
+    ho_cyclicprefix.h
+    ho_pdu_to_stream_async.h DESTINATION include/hnez_ofdm
 )
