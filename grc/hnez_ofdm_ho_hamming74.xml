@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <block>
-  <name>ho_fec</name>
-  <key>hnez_ofdm_ho_fec</key>
+  <name>ho_hamming74</name>
+  <key>hnez_ofdm_ho_hamming74</key>
   <category>[hnez_ofdm]</category>
   <import>import hnez_ofdm</import>
-  <make>hnez_ofdm.ho_fec()</make>
+  <make>hnez_ofdm.ho_hamming74($encode, $len_tag_key)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name

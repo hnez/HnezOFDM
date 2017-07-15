@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /* 
- * Copyright 2017 <+YOU OR YOUR COMPANY+>.
+ * Copyright 2017 Leonard Göhrs <leonard@goehrs.eu>.
  * 
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,35 +18,35 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef INCLUDED_HNEZ_OFDM_HO_FEC_IMPL_H
-#define INCLUDED_HNEZ_OFDM_HO_FEC_IMPL_H
+#ifndef INCLUDED_HNEZ_OFDM_HO_HAMMING74_IMPL_H
+#define INCLUDED_HNEZ_OFDM_HO_HAMMING74_IMPL_H
 
-#include <hnez_ofdm/ho_fec.h>
+#include <hnez_ofdm/ho_hamming74.h>
 
 namespace gr {
   namespace hnez_ofdm {
 
-    class ho_fec_impl : public ho_fec
+    class ho_hamming74_impl : public ho_hamming74
     {
-     private:
-      // Nothing to declare in this block.
+    private:
+      bool do_encode;
 
-     protected:
+    protected:
       int calculate_output_stream_length(const gr_vector_int &ninput_items);
 
-     public:
-      ho_fec_impl(bool encode, const std::string& len_tag_key);
-      ~ho_fec_impl();
+    public:
+      ho_hamming74_impl(bool encode, const std::string& len_tag_key);
+      ~ho_hamming74_impl();
 
       // Where all the action really happens
       int work(int noutput_items,
-           gr_vector_int &ninput_items,
-           gr_vector_const_void_star &input_items,
-           gr_vector_void_star &output_items);
+               gr_vector_int &ninput_items,
+               gr_vector_const_void_star &input_items,
+               gr_vector_void_star &output_items);
     };
 
   } // namespace hnez_ofdm
 } // namespace gr
 
-#endif /* INCLUDED_HNEZ_OFDM_HO_FEC_IMPL_H */
+#endif /* INCLUDED_HNEZ_OFDM_HO_HAMMING74_IMPL_H */
 

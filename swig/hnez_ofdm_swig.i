@@ -9,7 +9,7 @@
 
 %{
 #include "hnez_ofdm/ho_add_header.h"
-//#include "hnez_ofdm/ho_fec.h"
+#include "hnez_ofdm/ho_hamming74.h"
 //#include "hnez_ofdm/ho_interleave.h"
 //#include "hnez_ofdm/ho_assign_carriers.h"
 //#include "hnez_ofdm/ho_cyclicprefix.h"
@@ -19,8 +19,8 @@
 
 %include "hnez_ofdm/ho_add_header.h"
 GR_SWIG_BLOCK_MAGIC2(hnez_ofdm, ho_add_header);
-//%include "hnez_ofdm/ho_fec.h"
-//GR_SWIG_BLOCK_MAGIC2(hnez_ofdm, ho_fec);
+%include "hnez_ofdm/ho_hamming74.h"
+GR_SWIG_BLOCK_MAGIC2(hnez_ofdm, ho_hamming74);
 //%include "hnez_ofdm/ho_interleave.h"
 //GR_SWIG_BLOCK_MAGIC2(hnez_ofdm, ho_interleave);
 //%include "hnez_ofdm/ho_assign_carriers.h"
