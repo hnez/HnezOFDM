@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /* 
- * Copyright 2017 <+YOU OR YOUR COMPANY+>.
+ * Copyright 2017 Leonard Göhrs <leonard@goehrs.eu.
  * 
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,21 +28,23 @@ namespace gr {
 
     class ho_assign_carriers_impl : public ho_assign_carriers
     {
-     private:
-      // Nothing to declare in this block.
+    private:
+      int num_carriers;
+      int fft_len;
+      bool *occupied_carriers;
 
-     protected:
+    protected:
       int calculate_output_stream_length(const gr_vector_int &ninput_items);
 
-     public:
-      ho_assign_carriers_impl(num_carriers, fft_len, const std::string& len_tag_key);
+    public:
+      ho_assign_carriers_impl(int num_carriers, int fft_len, const std::string& len_tag_key);
       ~ho_assign_carriers_impl();
 
       // Where all the action really happens
       int work(int noutput_items,
-           gr_vector_int &ninput_items,
-           gr_vector_const_void_star &input_items,
-           gr_vector_void_star &output_items);
+               gr_vector_int &ninput_items,
+               gr_vector_const_void_star &input_items,
+               gr_vector_void_star &output_items);
     };
 
   } // namespace hnez_ofdm
