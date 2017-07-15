@@ -1,0 +1,11 @@
+This is the hnez_ofdm-write-a-block package meant as a guide to building
+out-of-tree packages. To use the hnez_ofdm blocks, the Python namespaces
+is in 'hnez_ofdm', which is imported as:
+
+    import hnez_ofdm
+
+See the Doxygen documentation for details about the blocks available
+in this package. A quick listing of the details can be found in Python
+after importing by using:
+
+    help(hnez_ofdm)
