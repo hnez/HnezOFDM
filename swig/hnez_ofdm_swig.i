@@ -11,6 +11,7 @@
 #include "hnez_ofdm/ho_add_header.h"
 #include "hnez_ofdm/ho_hamming74.h"
 #include "hnez_ofdm/ho_interleave.h"
+#include "hnez_ofdm/ho_qam4_multimod.h"
 //#include "hnez_ofdm/ho_assign_carriers.h"
 //#include "hnez_ofdm/ho_cyclicprefix.h"
 //#include "hnez_ofdm/ho_pdu_to_stream_async.h"
@@ -29,3 +30,6 @@ GR_SWIG_BLOCK_MAGIC2(hnez_ofdm, ho_interleave);
 //GR_SWIG_BLOCK_MAGIC2(hnez_ofdm, ho_cyclicprefix);
 //%include "hnez_ofdm/ho_pdu_to_stream_async.h"
 //GR_SWIG_BLOCK_MAGIC2(hnez_ofdm, ho_pdu_to_stream_async);
+
+%include "hnez_ofdm/ho_qam4_multimod.h"
+GR_SWIG_BLOCK_MAGIC2(hnez_ofdm, ho_qam4_multimod);

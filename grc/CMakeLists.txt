@@ -16,7 +16,6 @@
 # along with GNU Radio; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
-
 install(FILES
     hnez_ofdm_ho_add_header.xml
     hnez_ofdm_ho_hamming74.xml
@@ -25,5 +24,6 @@ install(FILES
     #hnez_ofdm_ho_assign_carriers.xml
     #hnez_ofdm_ho_cyclicprefix.xml
     #hnez_ofdm_ho_pdu_to_stream_async.xml
-    hnez_ofdm_ho_fec.xml DESTINATION share/gnuradio/grc/blocks
+    hnez_ofdm_ho_fec.xml
+    hnez_ofdm_ho_qam4_multimod.xml DESTINATION share/gnuradio/grc/blocks
 )

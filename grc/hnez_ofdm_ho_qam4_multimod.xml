@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <block>
-  <name>ho_qam_multimod</name>
-  <key>hnez_ofdm_ho_qam_multimod</key>
+  <name>ho_qam4_multimod</name>
+  <key>hnez_ofdm_ho_qam4_multimod</key>
   <category>[hnez_ofdm]</category>
   <import>import hnez_ofdm</import>
-  <make>hnez_ofdm.ho_qam_multimod($num_symbols, $num_points)</make>
+  <make>hnez_ofdm.ho_qam4_multimod($output_width)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name
