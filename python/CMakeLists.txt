@@ -50,3 +50,4 @@ GR_ADD_TEST(qa_ho_assign_carriers ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DI
 #GR_ADD_TEST(qa_ho_pdu_to_stream_async ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_ho_pdu_to_stream_async.py)
 GR_ADD_TEST(qa_ho_fec ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_ho_fec.py)
 GR_ADD_TEST(qa_ho_qam4_multimod ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_ho_qam4_multimod.py)
+GR_ADD_TEST(qa_ho_add_schmidlcox ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_ho_add_schmidlcox.py)

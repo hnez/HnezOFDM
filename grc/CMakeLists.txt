@@ -24,5 +24,6 @@ install(FILES
     hnez_ofdm_ho_assign_carriers.xml
     #hnez_ofdm_ho_cyclicprefix.xml
     #hnez_ofdm_ho_pdu_to_stream_async.xml
-    hnez_ofdm_ho_qam4_multimod.xml DESTINATION share/gnuradio/grc/blocks
+    hnez_ofdm_ho_qam4_multimod.xml
+    hnez_ofdm_ho_add_schmidlcox.xml DESTINATION share/gnuradio/grc/blocks
 )

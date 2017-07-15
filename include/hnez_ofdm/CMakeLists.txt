@@ -28,5 +28,6 @@ install(FILES
     ho_assign_carriers.h
     #ho_cyclicprefix.h
     #ho_pdu_to_stream_async.h
-    ho_qam4_multimod.h DESTINATION include/hnez_ofdm
+    ho_qam4_multimod.h
+    ho_add_schmidlcox.h DESTINATION include/hnez_ofdm
 )
