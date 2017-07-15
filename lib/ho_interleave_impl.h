@@ -1,17 +1,17 @@
 /* -*- c++ -*- */
-/* 
- * Copyright 2017 <+YOU OR YOUR COMPANY+>.
- * 
+/*
+ * Copyright 2017 Leonard Göhrs <leonard@goehrs.eu>.
+ *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3, or (at your option)
  * any later version.
- * 
+ *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this software; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 51 Franklin Street,
@@ -28,25 +28,26 @@ namespace gr {
 
     class ho_interleave_impl : public ho_interleave
     {
-     private:
-      // Nothing to declare in this block.
+    private:
+      int chunk_len;
+      int *permute_map;
 
-     protected:
+      void interleave_chunk(const uint8_t *in, uint8_t *out, int in_len);
+
+    protected:
       int calculate_output_stream_length(const gr_vector_int &ninput_items);
 
-     public:
+    public:
       ho_interleave_impl(int chunk_len, bool encode, const std::string& len_tag_key);
       ~ho_interleave_impl();
 
       // Where all the action really happens
       int work(int noutput_items,
-           gr_vector_int &ninput_items,
-           gr_vector_const_void_star &input_items,
-           gr_vector_void_star &output_items);
+               gr_vector_int &ninput_items,
+               gr_vector_const_void_star &input_items,
+               gr_vector_void_star &output_items);
     };
-
   } // namespace hnez_ofdm
 } // namespace gr
 
 #endif /* INCLUDED_HNEZ_OFDM_HO_INTERLEAVE_IMPL_H */
-

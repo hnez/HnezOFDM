@@ -24,7 +24,7 @@ install(FILES
     api.h
     ho_add_header.h
     ho_hamming74.h
-    #ho_interleave.h
+    ho_interleave.h
     #ho_assign_carriers.h
     #ho_cyclicprefix.h
     #ho_pdu_to_stream_async.h

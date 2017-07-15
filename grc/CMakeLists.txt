@@ -20,7 +20,7 @@
 install(FILES
     hnez_ofdm_ho_add_header.xml
     hnez_ofdm_ho_hamming74.xml
-    #hnez_ofdm_ho_interleave.xml
+    hnez_ofdm_ho_interleave.xml
     #hnez_ofdm_ho_qam_multimod.xml
     #hnez_ofdm_ho_assign_carriers.xml
     #hnez_ofdm_ho_cyclicprefix.xml
