@@ -21,7 +21,7 @@ install(FILES
     hnez_ofdm_ho_add_header.xml
     #hnez_ofdm_ho_fec.xml
     #hnez_ofdm_ho_interleave.xml
-    hnez_ofdm_ho_qam_multimod.xml
+    #hnez_ofdm_ho_qam_multimod.xml
     #hnez_ofdm_ho_assign_carriers.xml
     #hnez_ofdm_ho_cyclicprefix.xml
     #hnez_ofdm_ho_pdu_to_stream_async.xml
