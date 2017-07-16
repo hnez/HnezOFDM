@@ -86,7 +86,7 @@ namespace gr {
       memcpy(&out[8], in, payload_len);
 
       // Tell runtime system how many output items we produced.
-      return noutput_items;
+      return (payload_len + 8);
     }
 
   } /* namespace hnez_ofdm */

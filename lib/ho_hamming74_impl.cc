@@ -94,19 +94,21 @@ namespace gr {
       const uint8_t *in = (uint8_t *) input_items[0];
       uint8_t *out = (uint8_t *) output_items[0];
 
+      int in_count= ninput_items[0];
+
       if(do_encode) {
-        for(int i=0; i<noutput_items; i++) {
+        for(int i=0; i<in_count; i++) {
           out[i]= lut_encode[in[i] & 0x0f];
         }
       }
       else {
-        for(int i=0; i<noutput_items; i++) {
+        for(int i=0; i<in_count; i++) {
           out[i]= lut_decode[in[i] & 0x7f];
         }
       }
 
       // Tell runtime system how many output items we produced.
-      return noutput_items;
+      return in_count;
     }
 
   } /* namespace hnez_ofdm */

@@ -79,7 +79,9 @@ namespace gr {
       const gr_complex *in = (const gr_complex *) input_items[0];
       gr_complex *out = (gr_complex *) output_items[0];
 
-      for (int sym_num=0; sym_num < noutput_items; sym_num++) {
+      int in_count= ninput_items[0];
+
+      for (int sym_num=0; sym_num < in_count; sym_num++) {
         const gr_complex *in_sym= &in[sym_num * num_carriers];
         gr_complex *out_sym= &out[sym_num * fft_len];
 
@@ -95,7 +97,7 @@ namespace gr {
       }
 
       // Tell runtime system how many output items we produced.
-      return noutput_items;
+      return in_count;
     }
 
   } /* namespace hnez_ofdm */

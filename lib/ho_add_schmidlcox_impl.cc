@@ -94,14 +94,15 @@ namespace gr {
       const gr_complex *in = (const gr_complex *) input_items[0];
       gr_complex *out = (gr_complex *) output_items[0];
 
+      int in_count= ninput_items[0];
       size_t chunk_size= fft_len * sizeof(gr_complex);
 
       memcpy(&out[0], preamble_a, chunk_size);
       memcpy(&out[chunk_size], preamble_b, chunk_size);
-      memcpy(&out[chunk_size*2], in, chunk_size * ninput_items[0]);
+      memcpy(&out[chunk_size*2], in, chunk_size * in_count);
 
       // Tell runtime system how many output items we produced.
-      return noutput_items;
+      return (in_count + 2);
     }
 
   } /* namespace hnez_ofdm */
