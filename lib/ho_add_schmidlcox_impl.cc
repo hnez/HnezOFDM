@@ -49,25 +49,19 @@ namespace gr {
       preamble_a= new gr_complex[fft_len];
       preamble_b= new gr_complex[fft_len];
 
-      for(int i=0; i<fft_len; i+=2) {
-        uint8_t rnd= 104729 * (i+1);
-
-        float real= (rnd & 0x01) ? M_SQRT2 : -M_SQRT2;
-        float imag= (rnd & 0x02) ? M_SQRT2 : -M_SQRT2;
-
-        preamble_a[i]= gr_complex(real, imag);
-        preamble_a[i+1]= 0;
-      }
-
       for(int i=0; i<fft_len; i++) {
-        uint8_t rnd= 104729 * (i+1);
+         uint8_t rnd= 104729 * (i+1);
 
-        float real= (rnd & 0x04) ? M_SQRT2 : -M_SQRT2;
-        float imag= (rnd & 0x08) ? M_SQRT2 : -M_SQRT2;
+         preamble_a[i]= gr_complex((rnd & 0x01) ? M_SQRT2 : -M_SQRT2,
+                                   (rnd & 0x02) ? M_SQRT2 : -M_SQRT2);
 
-        preamble_b[i]= gr_complex(real, imag);
+         preamble_b[i]= gr_complex((rnd & 0x04) ? M_SQRT1_2 : -M_SQRT1_2,
+                                   (rnd & 0x08) ? M_SQRT1_2 : -M_SQRT1_2);
+
+         /* In the first preamble symbol only every
+            second carrier is occupied */
+         if (i%2) preamble_a[i]= 0;
       }
-    }
 
     /*
      * Our virtual destructor.
@@ -97,9 +91,9 @@ namespace gr {
       int in_count= ninput_items[0];
       size_t chunk_size= fft_len * sizeof(gr_complex);
 
-      memcpy(&out[0], preamble_a, chunk_size);
-      memcpy(&out[chunk_size], preamble_b, chunk_size);
-      memcpy(&out[chunk_size*2], in, chunk_size * in_count);
+      memcpy(&out[chunk_size * 0], preamble_a, chunk_size);
+      memcpy(&out[chunk_size * 1], preamble_b, chunk_size);
+      memcpy(&out[chunk_size * 2], in, chunk_size * in_count);
 
       // Tell runtime system how many output items we produced.
       return (in_count + 2);
