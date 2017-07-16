@@ -50,18 +50,19 @@ namespace gr {
       preamble_b= new gr_complex[fft_len];
 
       for(int i=0; i<fft_len; i++) {
-         uint8_t rnd= 104729 * (i+1);
+        uint8_t rnd= 104729 * (i+1);
 
-         preamble_a[i]= gr_complex((rnd & 0x01) ? M_SQRT2 : -M_SQRT2,
-                                   (rnd & 0x02) ? M_SQRT2 : -M_SQRT2);
+        preamble_a[i]= gr_complex((rnd & 0x01) ? M_SQRT2 : -M_SQRT2,
+                                  (rnd & 0x02) ? M_SQRT2 : -M_SQRT2);
 
-         preamble_b[i]= gr_complex((rnd & 0x04) ? M_SQRT1_2 : -M_SQRT1_2,
-                                   (rnd & 0x08) ? M_SQRT1_2 : -M_SQRT1_2);
+        preamble_b[i]= gr_complex((rnd & 0x04) ? M_SQRT1_2 : -M_SQRT1_2,
+                                  (rnd & 0x08) ? M_SQRT1_2 : -M_SQRT1_2);
 
-         /* In the first preamble symbol only every
-            second carrier is occupied */
-         if (i%2) preamble_a[i]= 0;
+        /* In the first preamble symbol only every
+           second carrier is occupied */
+        if (i%2) preamble_a[i]= 0;
       }
+    }
 
     /*
      * Our virtual destructor.
