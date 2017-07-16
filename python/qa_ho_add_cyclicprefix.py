@@ -23,7 +23,7 @@ from gnuradio import gr, gr_unittest
 from gnuradio import blocks
 import hnez_ofdm_swig as hnez_ofdm
 
-class qa_ho_cyclicprefix (gr_unittest.TestCase):
+class qa_ho_add_cyclicprefix (gr_unittest.TestCase):
 
     def setUp (self):
         self.tb = gr.top_block ()
@@ -38,4 +38,4 @@ class qa_ho_cyclicprefix (gr_unittest.TestCase):
 
 
 if __name__ == '__main__':
-    gr_unittest.run(qa_ho_cyclicprefix, "qa_ho_cyclicprefix.xml")
+    gr_unittest.run(qa_ho_add_cyclicprefix, "qa_ho_add_cyclicprefix.xml")

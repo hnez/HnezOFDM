@@ -29,10 +29,10 @@ list(APPEND hnez_ofdm_sources
     ho_hamming74_impl.cc
     ho_interleave_impl.cc
     ho_assign_carriers_impl.cc
-    #ho_cyclicprefix_impl.cc
-    #ho_pdu_to_stream_async_impl.cc
+    ho_pdu_to_stream_async_impl.cc
     ho_qam4_multimod_impl.cc
-    ho_add_schmidlcox_impl.cc )
+    ho_add_schmidlcox_impl.cc
+    ho_add_cyclicprefix_impl.cc )
 
 set(hnez_ofdm_sources "${hnez_ofdm_sources}" PARENT_SCOPE)
 if(NOT hnez_ofdm_sources)

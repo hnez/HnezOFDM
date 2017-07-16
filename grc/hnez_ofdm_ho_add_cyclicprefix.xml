@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <block>
-  <name>ho_cyclicprefix</name>
-  <key>hnez_ofdm_ho_cyclicprefix</key>
+  <name>ho_add_cyclicprefix</name>
+  <key>hnez_ofdm_ho_add_cyclicprefix</key>
   <category>[hnez_ofdm]</category>
   <import>import hnez_ofdm</import>
-  <make>hnez_ofdm.ho_cyclicprefix($fft_len, $cp_len, $len_tag_key)</make>
+  <make>hnez_ofdm.ho_add_cyclicprefix($fft_len, $cp_len)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name

@@ -19,11 +19,11 @@
  */
 
 
-#ifndef INCLUDED_HNEZ_OFDM_HO_CYCLICPREFIX_H
-#define INCLUDED_HNEZ_OFDM_HO_CYCLICPREFIX_H
+#ifndef INCLUDED_HNEZ_OFDM_HO_ADD_CYCLICPREFIX_H
+#define INCLUDED_HNEZ_OFDM_HO_ADD_CYCLICPREFIX_H
 
 #include <hnez_ofdm/api.h>
-#include <gnuradio/tagged_stream_block.h>
+#include <gnuradio/sync_block.h>
 
 namespace gr {
   namespace hnez_ofdm {
@@ -33,24 +33,24 @@ namespace gr {
      * \ingroup hnez_ofdm
      *
      */
-    class HNEZ_OFDM_API ho_cyclicprefix : virtual public gr::tagged_stream_block
+    class HNEZ_OFDM_API ho_add_cyclicprefix : virtual public gr::sync_block
     {
      public:
-      typedef boost::shared_ptr<ho_cyclicprefix> sptr;
+      typedef boost::shared_ptr<ho_add_cyclicprefix> sptr;
 
       /*!
-       * \brief Return a shared_ptr to a new instance of hnez_ofdm::ho_cyclicprefix.
+       * \brief Return a shared_ptr to a new instance of hnez_ofdm::ho_add_cyclicprefix.
        *
-       * To avoid accidental use of raw pointers, hnez_ofdm::ho_cyclicprefix's
+       * To avoid accidental use of raw pointers, hnez_ofdm::ho_add_cyclicprefix's
        * constructor is in a private implementation
-       * class. hnez_ofdm::ho_cyclicprefix::make is the public interface for
+       * class. hnez_ofdm::ho_add_cyclicprefix::make is the public interface for
        * creating new instances.
        */
-      static sptr make(int fft_len, int cp_len, const std::string& len_tag_key="packet_len");
+      static sptr make(int fft_len, int cp_len);
     };
 
   } // namespace hnez_ofdm
 } // namespace gr
 
-#endif /* INCLUDED_HNEZ_OFDM_HO_CYCLICPREFIX_H */
+#endif /* INCLUDED_HNEZ_OFDM_HO_ADD_CYCLICPREFIX_H */
 
