@@ -36,22 +36,26 @@ namespace gr {
   namespace hnez_ofdm {
 
     ho_qam4_multimod::sptr
-    ho_qam4_multimod::make(int output_width)
+    ho_qam4_multimod::make(int output_width, const std::string &len_tag_key)
     {
       return gnuradio::get_initial_sptr
-        (new ho_qam4_multimod_impl(output_width));
+        (new ho_qam4_multimod_impl(output_width, len_tag_key));
     }
 
     /*
      * The private constructor
      */
-    ho_qam4_multimod_impl::ho_qam4_multimod_impl(int output_width)
+    ho_qam4_multimod_impl::ho_qam4_multimod_impl(int output_width, const std::string &len_tag_key)
       : gr::sync_decimator("ho_qam4_multimod",
                            gr::io_signature::make(1, 1, sizeof(uint8_t)),
                            gr::io_signature::make(1, 1, sizeof(gr_complex) * output_width),
                            output_width/4)
     {
       this->output_width= output_width;
+      this->len_tag_key= pmt::intern(len_tag_key);
+
+      // The packet_len tag has to be transformed manually
+      set_tag_propagation_policy(TPP_DONT);
     }
 
     /*
@@ -82,6 +86,28 @@ namespace gr {
         out[out_idx++]= constellation[(in_byte>>0) & 0x03];
       }
 
+      // Manually propagate tags
+      
+      uint64_t absidx_in= nitems_read(0);
+      uint64_t absidx_out= nitems_written(0);
+
+      std::vector<tag_t> tags;
+      get_tags_in_range(tags, 0, absidx_in, absidx_in + ninput_items);
+
+      for(tag_t tag : tags) {
+        tag.offset/= decimation;
+                
+        if(pmt::eqv(tag.key, len_tag_key)) {
+          // Only the packet_len tag has to be mangled
+          
+          int pkg_len_orig= pmt::to_long(tag.value);
+          int pkg_len_new= pkg_len_orig / decimation;
+          tag.value= pmt::from_long(pkg_len_new);
+        }
+
+        add_item_tag(0, tag);
+      }
+      
       // Tell runtime system how many output items we produced.
       return noutput_items;
     }

@@ -46,7 +46,7 @@ namespace gr {
        * class. hnez_ofdm::ho_qam4_multimod::make is the public interface for
        * creating new instances.
        */
-      static sptr make(int output_width);
+      static sptr make(int output_width, const std::string &len_tag_key="packet_len");
     };
 
   } // namespace hnez_ofdm

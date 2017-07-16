@@ -30,9 +30,10 @@ namespace gr {
     {
     private:
       int output_width;
+      pmt::pmt_t len_tag_key;
 
     public:
-      ho_qam4_multimod_impl(int output_width);
+      ho_qam4_multimod_impl(int output_width, const std::string &len_tag_key);
       ~ho_qam4_multimod_impl();
 
       // Where all the action really happens
