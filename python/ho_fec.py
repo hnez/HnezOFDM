@@ -27,7 +27,7 @@ class ho_fec(gr.hier_block2):
     """
     docstring for block ho_fec
     """
-    def __init__(self, encode):
+    def __init__(self, encode, len_tag_key='packet_len'):
         gr.hier_block2.__init__(
             self,
             "ho_fec",
@@ -36,14 +36,14 @@ class ho_fec(gr.hier_block2):
         )
 
         if encode:
-            repack_pre= blocks.repack_bits_bb(8, 4, "packet_len", False, gr.GR_LSB_FIRST)
-            hamming= hnez_ofdm.ho_hamming74(True, 'packet_len')
-            repack_post= blocks.repack_bits_bb(7, 8, "packet_len", False, gr.GR_LSB_FIRST)
+            repack_pre= blocks.repack_bits_bb(8, 4, len_tag_key, False, gr.GR_LSB_FIRST)
+            hamming= hnez_ofdm.ho_hamming74(True, len_tag_key)
+            repack_post= blocks.repack_bits_bb(7, 8, len_tag_key, False, gr.GR_LSB_FIRST)
 
         else:
-            repack_pre= blocks.repack_bits_bb(8, 7, "packet_len", False, gr.GR_LSB_FIRST)
-            hamming= hnez_ofdm.ho_hamming74(False, 'packet_len')
-            repack_post= blocks.repack_bits_bb(4, 8, "packet_len", False, gr.GR_LSB_FIRST)
+            repack_pre= blocks.repack_bits_bb(8, 7, len_tag_key, False, gr.GR_LSB_FIRST)
+            hamming= hnez_ofdm.ho_hamming74(False, len_tag_key)
+            repack_post= blocks.repack_bits_bb(4, 8, len_tag_key, False, gr.GR_LSB_FIRST)
 
         self.connect((self, 0), (repack_pre, 0))
         self.connect((repack_pre, 0), (hamming, 0))

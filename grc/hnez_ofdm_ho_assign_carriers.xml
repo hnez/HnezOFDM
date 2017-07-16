@@ -1,38 +1,33 @@
-<?xml version="1.0"?>
 <block>
-  <name>ho_assign_carriers</name>
+  <name>Ho assign carriers</name>
   <key>hnez_ofdm_ho_assign_carriers</key>
-  <category>[hnez_ofdm]</category>
+  <category>[Hnez OFDM]</category>
   <import>import hnez_ofdm</import>
   <make>hnez_ofdm.ho_assign_carriers($num_carriers, $fft_len, $len_tag_key)</make>
-  <!-- Make one 'param' node for every Parameter you want settable from the GUI.
-       Sub-nodes:
-       * name
-       * key (makes the value accessible as $keyname, e.g. in the make node)
-       * type -->
   <param>
-    <name>...</name>
-    <key>...</key>
-    <type>...</type>
+    <name>Num_carriers</name>
+    <key>num_carriers</key>
+    <type>int</type>
   </param>
-
-  <!-- Make one 'sink' node per input. Sub-nodes:
-       * name (an identifier for the GUI)
-       * type
-       * vlen
-       * optional (set to 1 for optional inputs) -->
+  <param>
+    <name>Fft_len</name>
+    <key>fft_len</key>
+    <type>int</type>
+  </param>
+  <param>
+    <name>Len_tag_key</name>
+    <key>len_tag_key</key>
+    <value>"packet_len"</value>
+    <type>string</type>
+  </param>
   <sink>
     <name>in</name>
-    <type><!-- e.g. int, float, complex, byte, short, xxx_vector, ...--></type>
+    <type>complex</type>
+    <vlen>$num_carriers</vlen>
   </sink>
-
-  <!-- Make one 'source' node per output. Sub-nodes:
-       * name (an identifier for the GUI)
-       * type
-       * vlen
-       * optional (set to 1 for optional inputs) -->
   <source>
     <name>out</name>
-    <type><!-- e.g. int, float, complex, byte, short, xxx_vector, ...--></type>
+    <type>complex</type>
+    <vlen>$fft_len</vlen>
   </source>
 </block>
