@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <block>
-  <name>ho_fec</name>
+  <name>Ho Fec</name>
   <key>hnez_ofdm_ho_fec</key>
   <category>[Hnez OFDM]</category>
   <import>import hnez_ofdm</import>
-  <make>hnez_ofdm.ho_fec()</make>
+  <make>hnez_ofdm.ho_fec($encode, $len_tag_key)</make>
 
   <param>
     <name>Encode</name>
