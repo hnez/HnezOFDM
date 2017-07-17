@@ -26,7 +26,6 @@ install(FILES
     ho_hamming74.h
     ho_interleave.h
     ho_assign_carriers.h
-    ho_pdu_to_stream_async.h
     ho_qam4_multimod.h
     ho_add_schmidlcox.h
     ho_add_cyclicprefix.h DESTINATION include/hnez_ofdm
