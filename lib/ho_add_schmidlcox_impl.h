@@ -34,6 +34,8 @@ namespace gr {
       gr_complex *preamble_a;
       gr_complex *preamble_b;
 
+      bool lfsr (uint32_t *state);
+      
     protected:
       int calculate_output_stream_length(const gr_vector_int &ninput_items);
 

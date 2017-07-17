@@ -49,14 +49,14 @@ namespace gr {
       preamble_a= new gr_complex[fft_len];
       preamble_b= new gr_complex[fft_len];
 
+      uint32_t lfsr_state= 1;
+
       for(int i=0; i<fft_len; i++) {
-        uint8_t rnd= 104729 * (i+1);
+        preamble_a[i]= gr_complex(lfsr(&lfsr_state) ? M_SQRT2 : -M_SQRT2,
+                                  lfsr(&lfsr_state) ? M_SQRT2 : -M_SQRT2);
 
-        preamble_a[i]= gr_complex((rnd & 0x10) ? M_SQRT2 : -M_SQRT2,
-                                  (rnd & 0x20) ? M_SQRT2 : -M_SQRT2);
-
-        preamble_b[i]= gr_complex((rnd & 0x40) ? M_SQRT1_2 : -M_SQRT1_2,
-                                  (rnd & 0x80) ? M_SQRT1_2 : -M_SQRT1_2);
+        preamble_b[i]= gr_complex(lfsr(&lfsr_state) ? M_SQRT1_2 : -M_SQRT1_2,
+                                  lfsr(&lfsr_state) ? M_SQRT1_2 : -M_SQRT1_2);
 
         /* In the first preamble symbol only every
            second carrier is occupied */
@@ -83,6 +83,18 @@ namespace gr {
     {
       int noutput_items = ninput_items[0] + 2;
       return noutput_items ;
+    }
+
+    bool
+    ho_add_schmidlcox_impl::lfsr (uint32_t *state)
+    {
+      uint_fast8_t bit= (*state) & 1;
+
+      (*state)>>= 1;
+
+      if(bit) (*state)^= 0x80000057;
+
+      return bit;
     }
 
     int
