@@ -61,8 +61,10 @@ namespace gr {
     {
       gr_complex *out = (gr_complex *) output_items[0];
 
-      pmt::pmt_t msg; //= delete_head_nowait(PDU_PORT_ID);
+      pmt::pmt_t msg= delete_head_nowait(PDU_PORT_ID);
 
+      pmt::print(msg);
+      
       if(0) { //pmt::is_pair(msg) && pmt::is_c32vector(pmt::cdr(msg))) {
         pmt::pmt_t in_vec= pmt::cdr(msg);
 
