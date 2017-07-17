@@ -22,6 +22,6 @@
   <source>
     <name>out</name>
     <type>complex</type>
-    <vlen>$(fft_len + cp_len)</vlen>
+    <vlen>$fft_len + $cp_len</vlen>
   </source>
 </block>

@@ -61,11 +61,6 @@ namespace gr {
         /* In the first preamble symbol only every
            second carrier is occupied */
         if (i%2) preamble_a[i]= 0;
-
-        printf("preamble[%d]= %f+%fj / %f+%fj\n",
-               i,
-               preamble_a[i].real(), preamble_a[i].imag(),
-               preamble_b[i].real(), preamble_b[i].imag());
       }
     }
 
@@ -108,9 +103,6 @@ namespace gr {
 
       int in_count= ninput_items[0];
       int out_count= in_count + 2;
-
-      printf("in_count: %d\n", in_count);
-      printf("out_count: %d\n", in_count);
 
       if(out_count > noutput_items) {
         throw std::runtime_error("Output buffer to small!");
