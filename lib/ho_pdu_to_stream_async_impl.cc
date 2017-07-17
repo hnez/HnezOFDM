@@ -79,7 +79,11 @@ namespace gr {
         return in_items;
       }
       else {
-        int pad_len= (noutput_items < 512) ? noutput_items : 512;
+        int pad_len= noutput_items - 8192;
+
+        if(pad_len < 0) {
+          return 0;
+        }
 
         memset(out, 0, sizeof(gr_complex) * pad_len);
 
