@@ -63,10 +63,6 @@ namespace gr {
 
       pmt::pmt_t msg= delete_head_nowait(PDU_PORT_ID);
 
-      if(msg) {
-        pmt::print(msg);
-      }
-      
       if(msg && pmt::is_pair(msg) && pmt::is_c32vector(pmt::cdr(msg))) {
         pmt::pmt_t in_vec= pmt::cdr(msg);
 
