@@ -67,10 +67,14 @@ namespace gr {
         gr_complex *chunk_out= &out[chunk_idx * (fft_len + cp_len)];
 
         // Cyclic prefix
-        memcpy(&chunk_out[0], &chunk_in[fft_len - cp_len], cp_len);
+        memcpy(&chunk_out[0],
+               &chunk_in[fft_len - cp_len],
+               sizeof(gr_complex) * cp_len);
 
         // Payload
-        memcpy(&chunk_out[cp_len], &chunk_in[0], fft_len);
+        memcpy(&chunk_out[cp_len],
+               &chunk_in[0],
+               sizeof(gr_complex) * fft_len);
       }
 
       // Tell runtime system how many output items we produced.
