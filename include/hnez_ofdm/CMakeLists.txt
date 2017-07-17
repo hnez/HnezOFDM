@@ -28,5 +28,6 @@ install(FILES
     ho_assign_carriers.h
     ho_qam4_multimod.h
     ho_add_schmidlcox.h
-    ho_add_cyclicprefix.h DESTINATION include/hnez_ofdm
+    ho_add_cyclicprefix.h
+    ho_schmidl_cox_tagger.h DESTINATION include/hnez_ofdm
 )
