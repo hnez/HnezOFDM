@@ -61,6 +61,11 @@ namespace gr {
         /* In the first preamble symbol only every
            second carrier is occupied */
         if (i%2) preamble_a[i]= 0;
+
+        printf("preamble[%d]= %f+%fj / %f+%fj\n",
+               i,
+               preamble_a[i].real(), preamble_a[i].imag(),
+               preamble_b[i].real(), preamble_b[i].imag());
       }
     }
 
@@ -90,14 +95,23 @@ namespace gr {
       gr_complex *out = (gr_complex *) output_items[0];
 
       int in_count= ninput_items[0];
-      size_t chunk_size= fft_len * sizeof(gr_complex);
+      int out_count= in_count + 2;
 
-      memcpy(&out[chunk_size * 0], preamble_a, chunk_size);
-      memcpy(&out[chunk_size * 1], preamble_b, chunk_size);
-      memcpy(&out[chunk_size * 2], in, chunk_size * in_count);
+      printf("in_count: %d\n", in_count);
+      printf("out_count: %d\n", in_count);
+
+      if(out_count > noutput_items) {
+        throw std::runtime_error("Output buffer to small!");
+      }
+
+      size_t chunk_size= sizeof(gr_complex) * fft_len;
+
+      memcpy(out, preamble_a, chunk_size);
+      memcpy(&out[fft_len], preamble_b, chunk_size);
+      memcpy(&out[fft_len*2], in, chunk_size * in_count);
 
       // Tell runtime system how many output items we produced.
-      return (in_count + 2);
+      return (out_count);
     }
 
   } /* namespace hnez_ofdm */
