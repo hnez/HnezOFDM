@@ -33,6 +33,7 @@ namespace gr {
       int *permute_map;
 
       void interleave_chunk(const uint8_t *in, uint8_t *out, int in_len);
+      uint32_t lfsr (uint32_t *state);
 
     protected:
       int calculate_output_stream_length(const gr_vector_int &ninput_items);

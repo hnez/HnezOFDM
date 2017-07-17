@@ -55,14 +55,18 @@ namespace gr {
         map[i]= i;
       }
 
-      // Scramble the 1:1 mapping
-      for(size_t a=0; a<chunk_len_bits; a++) {
-        // I have no idea what i am doing here
-        size_t b= (104729 * (a+1)) % chunk_len_bits;
+      uint32_t lfsr_state= 1;
 
-        int tmp= map[b];
-        map[b]= map[a];
-        map[a]= tmp;
+      // Scramble the 1:1 mapping
+      for(int it=0; it<32; it++) {
+        for(size_t a=0; a<chunk_len_bits; a++) {
+          // I have no idea what i am doing here
+          size_t b= lfsr(&lfsr_state) % chunk_len_bits;
+
+          int tmp= map[b];
+          map[b]= map[a];
+          map[a]= tmp;
+        }
       }
 
 
@@ -119,6 +123,24 @@ namespace gr {
 
         out[out_byte_idx]|= in_bit << out_bit_in_byte;
       }
+    }
+
+    uint32_t
+    ho_interleave_impl::lfsr (uint32_t *state)
+    {
+      uint32_t res= 0;
+
+      for(int i=0; i<32; i++) {
+        uint_fast8_t bit= (*state) & 1;
+
+        (*state)>>= 1;
+
+        if(bit) (*state)^= 0x80000057;
+
+        res= (res << 1) | bit;
+      }
+
+      return res;
     }
 
     int
