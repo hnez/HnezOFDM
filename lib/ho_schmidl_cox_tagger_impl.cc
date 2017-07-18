@@ -70,7 +70,7 @@ namespace gr {
       const gr_complex *in = (const gr_complex *) input_items[0];
       gr_complex *out_orig = (gr_complex *) output_items[0];
       gr_complex *out_pw = (gr_complex *) output_items[1];
-      
+
       int half_len= fft_len/2;
 
       /* Symbol Types: A - Preamble A - Repeating at half length

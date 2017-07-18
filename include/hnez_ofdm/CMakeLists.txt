@@ -29,5 +29,6 @@ install(FILES
     ho_qam4_multimod.h
     ho_add_schmidlcox.h
     ho_add_cyclicprefix.h
-    ho_schmidl_cox_tagger.h DESTINATION include/hnez_ofdm
+    ho_schmidl_cox_tagger.h
+    ho_schmidl_cox_aligner.h DESTINATION include/hnez_ofdm
 )
