@@ -40,7 +40,7 @@ namespace gr {
         }
       };
 
-      size_t out_alignment;
+      int out_alignment;
 
       int64_t msgid_top_queued;
       int64_t msgid_top_unqueued;
