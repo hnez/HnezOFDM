@@ -21,6 +21,7 @@
   <sink>
     <name>msg_ack</name>
     <type>message</type>
+    <optional>1</optional>
   </sink>
   <source>
     <name>out</name>

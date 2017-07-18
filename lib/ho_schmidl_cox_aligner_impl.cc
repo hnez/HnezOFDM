@@ -87,6 +87,10 @@ namespace gr {
       else {
         ninput_items_required[0] = noutput_items - samples_in_queue;
       }
+
+      fprintf(stderr, "ho_scalign: forecast %d -> %d\n",
+              ninput_items_required[0],
+              noutput_items);
     }
 
     int
@@ -104,7 +108,11 @@ namespace gr {
 
       int idx_in= 0;
 
+      fprintf(stderr, "ho_scalign: enter general_work\n");
+
       while(idx_in < (ninput_items[0] - out_alignment)) {
+        fprintf(stderr, "ho_scalign: append loop idx_in: %d\n", idx_in);
+
         if(msgid_top_queued > msgid_top_acked) {
           /* The currently streamed message id has not
            * yet been acknoledged, so it should be added
@@ -125,12 +133,16 @@ namespace gr {
                            pmt::mp("schmidl_cox_phase"));
 
         if(tags.empty()) {
+          fprintf(stderr, "ho_scalign: no tags in sight\n", idx_in);
+
           // There is no new start tag, no need to realign
 
           idx_in+= out_alignment;
         }
         else {
           // There is a new start tag, realign stream
+
+          fprintf(stderr, "ho_scalign: found tag\n");
 
           tag_t tag= tags.back();
 
@@ -139,6 +151,8 @@ namespace gr {
           idx_in= tag.offset - nitems_read(0);
         }
       }
+
+      fprintf(stderr, "ho_scalign: munching %d items\n", idx_in);
 
       consume_each(idx_in);
 
@@ -150,6 +164,8 @@ namespace gr {
 
       while((idx_out < (noutput_items - out_alignment)) &&
             !sample_queue.empty()) {
+
+        fprintf(stderr, "ho_scalign: spit some elements idx_out: %d\n", idx_out);
 
         struct sample_queue_elem_t elem= sample_queue.front();
 
