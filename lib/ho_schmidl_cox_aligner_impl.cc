@@ -184,7 +184,9 @@ namespace gr {
           idx_out+= out_alignment;
         }
 
+        fprintf(stderr, "How about here?\n");
         sample_queue.pop();
+        fprintf(stderr, "Also here?\n");
       }
 
       return idx_out;
