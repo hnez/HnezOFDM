@@ -108,9 +108,15 @@ namespace gr {
 
       int idx_in= 0;
 
-      fprintf(stderr, "ho_scalign: enter general_work\n");
+      fprintf(stderr, "ho_scalign: enter general_work(%d, %d)\n",
+              noutput_items, ninput_items[0]);
 
       while(idx_in < (ninput_items[0] - out_alignment)) {
+        fprintf(stderr, "%d < (%d - %d) = %d => %s\n",
+                idx_in, ninput_items[0], out_alignment,
+                ninput_items[0] - out_alignment,
+                (idx_in < (ninput_items[0] - out_alignment)) ? "true" : "false");
+        
         fprintf(stderr, "ho_scalign: append loop idx_in: %d\n", idx_in);
 
         if(msgid_top_queued > msgid_top_acked) {
