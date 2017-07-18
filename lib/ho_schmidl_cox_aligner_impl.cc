@@ -141,7 +141,7 @@ namespace gr {
 
         std::vector<tag_t> tags;
         get_tags_in_window(tags, 0,
-                           idx_in, idx_in + out_alignment,
+                           idx_in + 1, idx_in + out_alignment,
                            pmt::mp("schmidl_cox_phase"));
 
         if(tags.empty()) {
