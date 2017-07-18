@@ -37,7 +37,8 @@ namespace gr {
         ~sample_queue_elem_t()
         {
           fprintf(stderr, "Will i survive?\n");
-          delete[] samples;
+          //delete[] samples;
+          samples= NULL;
           fprintf(stderr, "Yes!\n");
         }
       };
