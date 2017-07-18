@@ -123,6 +123,8 @@ namespace gr {
           memcpy(elem.samples,
                  &in[idx_in],
                  sizeof(gr_complex) * out_alignment);
+
+          sample_queue.push(elem);
         }
 
         std::vector<tag_t> tags;
