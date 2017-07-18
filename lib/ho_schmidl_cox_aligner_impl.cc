@@ -85,7 +85,13 @@ namespace gr {
         ninput_items_required[0] = 0;
       }
       else {
-        ninput_items_required[0] = noutput_items - samples_in_queue;
+        int req= noutput_items - samples_in_queue;
+
+        if (req < out_alignment) {
+          req= out_alignment;
+        }
+
+        ninput_items_required[0] = req;
       }
 
       fprintf(stderr, "ho_scalign: forecast %d -> %d\n",
@@ -116,7 +122,7 @@ namespace gr {
                 idx_in, ninput_items[0], out_alignment,
                 ninput_items[0] - out_alignment,
                 (idx_in < (ninput_items[0] - out_alignment)) ? "true" : "false");
-        
+
         fprintf(stderr, "ho_scalign: append loop idx_in: %d\n", idx_in);
 
         if(msgid_top_queued > msgid_top_acked) {
