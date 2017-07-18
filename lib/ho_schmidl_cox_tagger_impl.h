@@ -30,8 +30,8 @@ namespace gr {
     {
     private:
       int fft_len;
-      float power_thres_hi_sq;
-      float power_thres_lo_sq;
+      float power_thres_hi;
+      float power_thres_lo;
 
     public:
       ho_schmidl_cox_tagger_impl(int fft_len,
