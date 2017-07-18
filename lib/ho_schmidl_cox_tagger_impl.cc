@@ -45,7 +45,7 @@ namespace gr {
                                                            float power_thres_lo)
       : gr::sync_block("ho_schmidl_cox_tagger",
                        gr::io_signature::make(1, 1, sizeof(gr_complex)),
-                       gr::io_signature::make(1, 1, sizeof(gr_complex)))
+                       gr::io_signature::make(2, 2, sizeof(gr_complex)))
     {
       this->fft_len= fft_len;
       this->power_thres_hi= power_thres_hi;
@@ -68,8 +68,9 @@ namespace gr {
                                      gr_vector_void_star &output_items)
     {
       const gr_complex *in = (const gr_complex *) input_items[0];
-      gr_complex *out = (gr_complex *) output_items[0];
-
+      gr_complex *out_orig = (gr_complex *) output_items[0];
+      gr_complex *out_pw = (gr_complex *) output_items[1];
+      
       int half_len= fft_len/2;
 
       /* Symbol Types: A - Preamble A - Repeating at half length
@@ -92,7 +93,7 @@ namespace gr {
       /* The window length is shorter than noutputs by
        * one symbol as we only nead to detect preamble_a's
        * for which there is also already a preamble_b in the input */
-      int window_len= noutput_items - fft_len;
+      int window_len= noutput_items;
       gr_complex energy_detect= 0;
       float energy_ref= 0;
 
@@ -167,6 +168,8 @@ namespace gr {
           }
         }
 
+        out_pw[widx]= relative_power;
+
         // Subtract next item that slides out of the window
         energy_detect-= in[widx] * std::conj(in[widx + half_len]);
         energy_ref-= std::norm(in[widx]);
@@ -175,7 +178,7 @@ namespace gr {
       /* Because of the set_history call in the constructor
        * copying the input directly to the output will introduce
        * a delay of two symbols */
-      memcpy(out, in, sizeof(gr_complex) * noutput_items);
+      memcpy(out_orig, in, sizeof(gr_complex) * noutput_items);
 
       // Tell runtime system how many output items we produced.
       return noutput_items;

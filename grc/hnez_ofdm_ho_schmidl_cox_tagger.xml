@@ -27,4 +27,8 @@
     <name>out</name>
     <type>complex</type>
   </source>
+  <source>
+    <name>rel_pw</name>
+    <type>complex</type>
+  </source>
 </block>
