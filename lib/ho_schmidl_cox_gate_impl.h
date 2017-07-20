@@ -29,21 +29,44 @@ namespace gr {
     class ho_schmidl_cox_gate_impl : public ho_schmidl_cox_gate
     {
     private:
-      int d_fft_len;
-      int d_cp_len;
-      float d_rel_pw_lo;
-      float d_rel_pw_hi;
-      double d_sample_rate;
+      const double d_sample_rate;
+      
+      const struct {
+        int fft;
+        int cp;
+        int preamble;
+      } d_lengths;
 
-      bool d_am_aligned;
+      const struct {
+        float low;
+        float high;
+      } d_relative_thresholds;
+      
+      struct d_energy_history_t{
+      private:
+        size_t len_window;
+        size_t idx;
+        std::unique_ptr<gr_complex[]> hist_detect;
+        std::unique_ptr<float[]> hist_reference;
 
-      bool d_am_realigning;
+      public:
+        gr_complex detect;
+        float reference;
+        
+        d_energy_history_t(size_t fft_len);
+        void update(gr_complex now, gr_complex old);
+        void reset();
+      } d_energy_history;
+
       struct {
-        uint64_t abs_idx;
-        float power;
+        bool am_inside;
+        float relative_power;
         gr_complex energy;
-      } d_rel_pw_max;
-
+        int64_t abs_idx;
+      } d_power_peak;
+      
+      bool d_am_aligned;
+      
     public:
       ho_schmidl_cox_gate_impl(int fft_len, int cp_len, float rel_pw_lo, float rel_pw_hi, double sample_rate);
       ~ho_schmidl_cox_gate_impl();

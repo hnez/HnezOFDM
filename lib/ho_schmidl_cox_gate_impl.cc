@@ -27,12 +27,48 @@
 
 namespace gr {
   namespace hnez_ofdm {
-
     ho_schmidl_cox_gate::sptr
     ho_schmidl_cox_gate::make(int fft_len, int cp_len, float rel_pw_lo, float rel_pw_hi, double sample_rate)
     {
       return gnuradio::get_initial_sptr
         (new ho_schmidl_cox_gate_impl(fft_len, cp_len, rel_pw_lo, rel_pw_hi, sample_rate));
+    }
+
+
+    ho_schmidl_cox_gate_impl::d_energy_history_t::d_energy_history_t(size_t fft_len)
+      : len_window(fft_len/2),
+        idx(0),
+        hist_detect(new gr_complex[fft_len/2]),
+        hist_reference(new float[fft_len/2])
+    {
+      reset();
+    }
+
+    void
+    ho_schmidl_cox_gate_impl::d_energy_history_t::reset()
+    {
+      detect= 0;
+      reference= 0;
+
+      for(size_t i=0; i<len_window; i++) {
+        hist_detect[i]= 0;
+        hist_reference[i]= 0;
+      }
+    }
+
+    void
+    ho_schmidl_cox_gate_impl::d_energy_history_t::update(gr_complex now, gr_complex old)
+    {
+      hist_detect[idx]= now * std::conj(old);
+      hist_reference[idx]= std::norm(now);
+
+      detect+= hist_detect[idx];
+      reference+= hist_reference[idx];
+
+      idx= (idx + 1) % len_window;
+
+      detect-= hist_detect[idx];
+      reference-= hist_reference[idx];
     }
 
     /*
@@ -44,14 +80,13 @@ namespace gr {
       : gr::block("ho_schmidl_cox_gate",
                   gr::io_signature::make(1, 1, sizeof(gr_complex)),
                   gr::io_signature::make(1, 1, sizeof(gr_complex) * fft_len)),
-      d_fft_len(fft_len),
-      d_cp_len(cp_len),
-      d_rel_pw_lo(rel_pw_lo),
-      d_rel_pw_hi(rel_pw_hi),
       d_sample_rate(sample_rate),
+      d_lengths({.fft=fft_len, .cp=cp_len, .preamble=fft_len/2}),
+      d_relative_thresholds({.low=rel_pw_lo, .high=rel_pw_hi}),
+      d_energy_history(fft_len),
+      d_power_peak({.am_inside=false, .relative_power=0, .energy=0, .abs_idx=0}),
       d_am_aligned(false)
     {
-      /* TODO: find out if the +1 is actually correct */
       set_history(fft_len + 1);
     }
 
@@ -62,10 +97,11 @@ namespace gr {
     {
     }
 
+
     void
     ho_schmidl_cox_gate_impl::forecast (int noutput_items, gr_vector_int &ninput_items_required)
     {
-      ninput_items_required[0] = noutput_items * (d_fft_len + d_cp_len);
+      ninput_items_required[0] = noutput_items * (d_lengths.fft + d_lengths.cp);
     }
 
     int
@@ -77,37 +113,25 @@ namespace gr {
       const gr_complex *in_history= (gr_complex *) input_items[0];
       gr_complex *out= (gr_complex *) output_items[0];
 
+      /* We will later use negative indices to refer to
+       * elements in the history */
+      const gr_complex *in= &in_history[history() - 1];
+
       int len_in= ninput_items[0];
-      int fft_half_len= d_fft_len/2;
-      int in_alignment= d_fft_len + d_cp_len;
-      int out_alignment= d_fft_len;
-
-      const gr_complex *in= &in_history[d_fft_len];
-
-      gr_complex energy_detect= 0;
-      float energy_ref= 0;
-
-
-      /* First the energy_detect and energy_ref accumulators
-       * have to be primed with the values from history */
-      for(int idx_in=-fft_half_len; idx_in<0; idx_in++) {
-        energy_detect+= in[idx_in] * std::conj(in[idx_in - fft_half_len]);
-        energy_ref+= std::norm(in[idx_in]);
-      }
+      int len_out= noutput_items;
+      int in_alignment= d_lengths.fft + d_lengths.cp;
+      int out_alignment= d_lengths.fft;
 
       int idx_in=0, idx_out=0;
-      for(;
-          (idx_in < (len_in - in_alignment)) && (idx_out < noutput_items);
-          idx_in+=in_alignment) {
-
+      while((idx_in < (len_in - in_alignment)) && (idx_out < len_out)) {
         if(d_am_aligned) {
           // Output the symbol but not the cyclic prefix
 
           memcpy(&out[idx_out * out_alignment],
-                 &in[idx_in + d_cp_len],
+                 &in[idx_in + d_lengths.cp],
                  out_alignment);
 
-          idx_out+= 1;
+          idx_out++;
         }
 
         int idx_in_new= -1;
@@ -115,9 +139,10 @@ namespace gr {
         for(int idx_win=idx_in;
             idx_win < (idx_in + in_alignment);
             idx_win++) {
+
           // Add next item that slides into the window
-          energy_detect+= in[idx_win] * std::conj(in[idx_win - fft_half_len]);
-          energy_ref+= std::norm(in[idx_win]);
+          d_energy_history.update(in[idx_win - d_lengths.preamble],
+                                  in[idx_win - d_lengths.fft]);
 
           /* - power_detect keeps track of the power of the time-shifted
            *   input sigal times the unshifted signal.
@@ -126,8 +151,8 @@ namespace gr {
            * - power_ref keeps track of the overall input power
            * - relative_power is power_detect normalized by the mean input
            *   power in the analyzed window. */
-          float power_detect= std::abs(energy_detect) / fft_half_len;
-          float power_ref= energy_ref / fft_half_len;
+          float power_detect= std::abs(d_energy_history.detect) / d_lengths.preamble;
+          float power_ref= d_energy_history.reference / d_lengths.preamble;
           float relative_power= (power_ref > 0) ? (power_detect / power_ref) : 0.0;
 
 
@@ -146,54 +171,49 @@ namespace gr {
            * The plateau is due to the cyclic prefixing and its length
            * is influenced by the length of the channels impulse response
            * and the cyclic prefix length  */
-          if (d_am_realigning) {
-            if (relative_power < d_rel_pw_lo) {
-              d_am_realigning= false;
-              d_am_aligned= true;
-
-              uint64_t idx_abs_now= nitems_read(0) + idx_win;
-              uint64_t idx_abs_first_sym= d_rel_pw_max.abs_idx + in_alignment;
-
-              idx_in_new= idx_abs_first_sym - idx_abs_now;
-            }
-          }
-          else {
-            if (relative_power > d_rel_pw_hi) {
-              d_am_realigning= true;
+          if (!d_power_peak.am_inside &&
+              (relative_power > d_relative_thresholds.high)) {
+            
               d_am_aligned= false;
 
-              d_rel_pw_max.power= 0;
+              d_power_peak.am_inside= true;
+
+              d_power_peak.relative_power= 0;
+          }
+
+          if (d_power_peak.am_inside) {
+            if (relative_power > d_power_peak.relative_power) {
+              d_power_peak.relative_power= relative_power;
+              d_power_peak.energy= d_energy_history.detect;
+              d_power_peak.abs_idx= nitems_read(0) + idx_win;
             }
-          }
 
-          // This is used for realignment
-          if (relative_power > d_rel_pw_max.power) {
-            d_rel_pw_max.power= relative_power;
-            d_rel_pw_max.energy= energy_detect;
-            d_rel_pw_max.abs_idx= nitems_read(0) + idx_win;
-          }
+            if (relative_power < d_relative_thresholds.low) {
+              d_power_peak.am_inside= false;
 
-          // Subtract next item that slides out of the window
-          energy_detect-= in[idx_win - fft_half_len] * std::conj(in[idx_win - d_fft_len]);
-          energy_ref-= std::norm(in[idx_win - fft_half_len]);
-        }
+              int64_t idx_win_abs= nitems_read(0) + idx_win;
+              int64_t idx_in_new= d_power_peak.abs_idx - idx_win_abs;
 
-        if(!d_am_realigning &&
-           (idx_in_new > 0) &&
-           (idx_in_new < len_in)) {
+              if((idx_in_new < (history() - 1)) || (idx_in > len_in)) {
+                fprintf(stderr,
+                        "schmid_cox_gate: realignment failed, idx_in_new=%li is out of bounds\n",
+                        idx_in_new);
+              }
+              else {
+                /* Theoretically we would now have to fo backwards from
+                 * idx_in to idx_in_new and update the energy estimation.
+                 * But we actually do not want to detect the same peak again.
+                 * Calling reset() will flush the history and prevent detection
+                 * of peaks for some time. */
+                d_energy_history.reset();
 
-          for(;idx_in < idx_in_new; idx_in++) {
-            // Fast-forward the accumulators
-
-            energy_detect+= in[idx_in] * std::conj(in[idx_in - fft_half_len]);
-            energy_ref+= std::norm(in[idx_in]);
-
-            energy_detect-= in[idx_in - fft_half_len] * std::conj(in[idx_in - d_fft_len]);
-            energy_ref-= std::norm(in[idx_in - fft_half_len]);
+                idx_in= idx_in_new;
+              }
+            }
           }
         }
       }
-
+      
       consume_each (idx_in);
 
       // Tell runtime system how many output items we produced.
