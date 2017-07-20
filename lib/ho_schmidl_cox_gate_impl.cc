@@ -23,6 +23,7 @@
 #endif
 
 #include <gnuradio/io_signature.h>
+#include <volk/volk.h>
 #include "ho_schmidl_cox_gate_impl.h"
 
 namespace gr {
@@ -59,8 +60,8 @@ namespace gr {
     void
     ho_schmidl_cox_gate_impl::d_energy_history_t::update(gr_complex now, gr_complex old)
     {
-      hist_detect[idx]= now * std::conj(old);
-      hist_reference[idx]= std::norm(now);
+      hist_detect[idx]= now * conj(old);
+      hist_reference[idx]= norm(now);
 
       detect+= hist_detect[idx];
       reference+= hist_reference[idx];
@@ -85,6 +86,7 @@ namespace gr {
       d_relative_thresholds({.low=rel_pw_lo, .high=rel_pw_hi}),
       d_energy_history(fft_len),
       d_power_peak({.am_inside=false, .relative_power=0, .energy=0, .abs_idx=0}),
+      d_fq_compensation({.phase_acc=1, .phase_rot=1}),
       d_am_aligned(false)
     {
       set_history(fft_len + 1);
@@ -125,11 +127,17 @@ namespace gr {
       int idx_in=0, idx_out=0;
       while((idx_in < (len_in - in_alignment)) && (idx_out < len_out)) {
         if(d_am_aligned) {
-          // Output the symbol but not the cyclic prefix
+          /* Fast forward the frequency compensation over the
+           * cyclic prefix */
+          d_fq_compensation.phase_acc*= pow(d_fq_compensation.phase_rot, d_lengths.cp);
 
-          memcpy(&out[idx_out * out_alignment],
-                 &in[idx_in + d_lengths.cp],
-                 out_alignment);
+          /* Frequency shift and output the symbol but not the
+           * cyclic prefix */
+          volk_32fc_s32fc_x2_rotator_32fc(&out[idx_out * out_alignment],
+                                          &in[idx_in + d_lengths.cp],
+                                          d_fq_compensation.phase_rot,
+                                          &d_fq_compensation.phase_acc,
+                                          out_alignment);
 
           idx_out++;
         }
@@ -151,7 +159,7 @@ namespace gr {
            * - power_ref keeps track of the overall input power
            * - relative_power is power_detect normalized by the mean input
            *   power in the analyzed window. */
-          float power_detect= std::abs(d_energy_history.detect) / d_lengths.preamble;
+          float power_detect= abs(d_energy_history.detect) / d_lengths.preamble;
           float power_ref= d_energy_history.reference / d_lengths.preamble;
           float relative_power= (power_ref > 0) ? (power_detect / power_ref) : 0.0;
 
@@ -173,7 +181,7 @@ namespace gr {
            * and the cyclic prefix length  */
           if (!d_power_peak.am_inside &&
               (relative_power > d_relative_thresholds.high)) {
-            
+
               d_am_aligned= false;
 
               d_power_peak.am_inside= true;
@@ -200,12 +208,27 @@ namespace gr {
                         idx_in_new);
               }
               else {
-                /* Theoretically we would now have to fo backwards from
+                /* Theoretically we would now have to go backwards from
                  * idx_in to idx_in_new and update the energy estimation.
                  * But we actually do not want to detect the same peak again.
                  * Calling reset() will flush the history and prevent detection
                  * of peaks for some time. */
                 d_energy_history.reset();
+
+                /* The preamble was shifted by the phase of energy in
+                 * d_lengths.preamble, the following lines calculate the
+                 * phase shift per sample, invert it and store it
+                 * for later frequency offset compensation. */
+                gr_complex rot_per_sample= pow(d_power_peak.energy,
+                                                    1.0f/d_lengths.preamble);
+
+                gr_complex norm_rot_per_sample= rot_per_sample / abs(rot_per_sample);
+
+                d_fq_compensation.phase_rot= conj(norm_rot_per_sample);
+
+                /* The phase accumulator might degenerate because of
+                 * accumulated rounding errors. Make sure it stays normalized */
+                d_fq_compensation.phase_acc/= abs(d_fq_compensation.phase_acc);
 
                 idx_in= idx_in_new;
               }
@@ -213,7 +236,7 @@ namespace gr {
           }
         }
       }
-      
+
       consume_each (idx_in);
 
       // Tell runtime system how many output items we produced.
