@@ -30,5 +30,6 @@ install(FILES
     ho_add_schmidlcox.h
     ho_add_cyclicprefix.h
     ho_schmidl_cox_tagger.h
-    ho_schmidl_cox_aligner.h DESTINATION include/hnez_ofdm
+    ho_schmidl_cox_aligner.h
+    ho_schmidl_cox_gate.h DESTINATION include/hnez_ofdm
 )

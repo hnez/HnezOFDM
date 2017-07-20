@@ -51,3 +51,4 @@ GR_ADD_TEST(qa_ho_add_schmidlcox ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR
 GR_ADD_TEST(qa_ho_add_cyclicprefix ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_ho_add_cyclicprefix.py)
 GR_ADD_TEST(qa_ho_schmidl_cox_tagger ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_ho_schmidl_cox_tagger.py)
 GR_ADD_TEST(qa_ho_schmidl_cox_aligner ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_ho_schmidl_cox_aligner.py)
+GR_ADD_TEST(qa_ho_schmidl_cox_gate ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_ho_schmidl_cox_gate.py)

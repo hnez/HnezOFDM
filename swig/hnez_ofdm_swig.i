@@ -17,6 +17,7 @@
 #include "hnez_ofdm/ho_add_cyclicprefix.h"
 #include "hnez_ofdm/ho_schmidl_cox_tagger.h"
 #include "hnez_ofdm/ho_schmidl_cox_aligner.h"
+#include "hnez_ofdm/ho_schmidl_cox_gate.h"
 %}
 
 
@@ -40,3 +41,5 @@ GR_SWIG_BLOCK_MAGIC2(hnez_ofdm, ho_schmidl_cox_tagger);
 
 %include "hnez_ofdm/ho_schmidl_cox_aligner.h"
 GR_SWIG_BLOCK_MAGIC2(hnez_ofdm, ho_schmidl_cox_aligner);
+%include "hnez_ofdm/ho_schmidl_cox_gate.h"
+GR_SWIG_BLOCK_MAGIC2(hnez_ofdm, ho_schmidl_cox_gate);

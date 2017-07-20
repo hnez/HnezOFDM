@@ -26,5 +26,6 @@ install(FILES
     hnez_ofdm_ho_add_schmidlcox.xml
     hnez_ofdm_ho_add_cyclicprefix.xml
     hnez_ofdm_ho_schmidl_cox_tagger.xml
-    hnez_ofdm_ho_schmidl_cox_aligner.xml DESTINATION share/gnuradio/grc/blocks
+    hnez_ofdm_ho_schmidl_cox_aligner.xml
+    hnez_ofdm_ho_schmidl_cox_gate.xml DESTINATION share/gnuradio/grc/blocks
 )
