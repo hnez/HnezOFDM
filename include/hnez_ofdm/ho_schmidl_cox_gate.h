@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /* 
- * Copyright 2017 <+YOU OR YOUR COMPANY+>.
+ * Copyright 2017 Leonard Göhrs <leonard@goehrs.eu>.
  * 
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ namespace gr {
      */
     class HNEZ_OFDM_API ho_schmidl_cox_gate : virtual public gr::block
     {
-     public:
+    public:
       typedef boost::shared_ptr<ho_schmidl_cox_gate> sptr;
 
       /*!
@@ -46,7 +46,7 @@ namespace gr {
        * class. hnez_ofdm::ho_schmidl_cox_gate::make is the public interface for
        * creating new instances.
        */
-      static sptr make(int fft_len, int cp_len, float rel_pw_lo, float rel_pw_hi, double sample_rate);
+      static sptr make(int fft_len, int cp_len, float rel_pw_lo, float rel_pw_hi);
     };
 
   } // namespace hnez_ofdm

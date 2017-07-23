@@ -2,37 +2,48 @@
 <block>
   <name>ho_schmidl_cox_gate</name>
   <key>hnez_ofdm_ho_schmidl_cox_gate</key>
-  <category>[hnez_ofdm]</category>
+  <category>[Hnez OFDM]</category>
   <import>import hnez_ofdm</import>
-  <make>hnez_ofdm.ho_schmidl_cox_gate($fft_len, $cp_len, $rel_pw_lo, $rel_pw_hi, $sample_rate)</make>
-  <!-- Make one 'param' node for every Parameter you want settable from the GUI.
-       Sub-nodes:
-       * name
-       * key (makes the value accessible as $keyname, e.g. in the make node)
-       * type -->
+  <make>hnez_ofdm.ho_schmidl_cox_gate($fft_len, $cp_len, $rel_pw_lo, $rel_pw_hi)</make>
+
   <param>
-    <name>...</name>
-    <key>...</key>
-    <type>...</type>
+    <name>FFT length</name>
+    <key>fft_len</key>
+    <type>int</type>
   </param>
 
-  <!-- Make one 'sink' node per input. Sub-nodes:
-       * name (an identifier for the GUI)
-       * type
-       * vlen
-       * optional (set to 1 for optional inputs) -->
+  <param>
+    <name>Cyclic prefix length</name>
+    <key>cp_len</key>
+    <type>int</type>
+  </param>
+
+  <param>
+    <name>Relative power low threshold</name>
+    <key>rel_pw_lo</key>
+    <type>float</type>
+  </param>
+
+  <param>
+    <name>Relative power high threshold</name>
+    <key>rel_pw_hi</key>
+    <type>float</type>
+  </param>
+
   <sink>
     <name>in</name>
-    <type><!-- e.g. int, float, complex, byte, short, xxx_vector, ...--></type>
+    <type>float</type>
   </sink>
 
-  <!-- Make one 'source' node per output. Sub-nodes:
-       * name (an identifier for the GUI)
-       * type
-       * vlen
-       * optional (set to 1 for optional inputs) -->
+  <sink>
+    <name>frame_ack</name>
+    <type>message</type>
+    <optional>1</optional>
+  </sink>
+
   <source>
     <name>out</name>
-    <type><!-- e.g. int, float, complex, byte, short, xxx_vector, ...--></type>
+    <type>float</type>
+    <vlen>$fft_len</vlen>
   </source>
 </block>

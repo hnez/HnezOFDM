@@ -29,8 +29,6 @@ namespace gr {
     class ho_schmidl_cox_gate_impl : public ho_schmidl_cox_gate
     {
     private:
-      const double d_sample_rate;
-
       const struct {
         int fft;
         int cp;
@@ -71,13 +69,16 @@ namespace gr {
       } d_fq_compensation;
 
       bool d_am_aligned;
+      uint64_t d_frame_id;
 
+      void on_frame_ack(pmt::pmt_t msg);
 
     public:
-      ho_schmidl_cox_gate_impl(int fft_len, int cp_len, float rel_pw_lo, float rel_pw_hi, double sample_rate);
+      ho_schmidl_cox_gate_impl(int fft_len, int cp_len,
+                               float rel_pw_lo, float rel_pw_hi);
+
       ~ho_schmidl_cox_gate_impl();
 
-      // Where all the action really happens
       void forecast (int noutput_items, gr_vector_int &ninput_items_required);
 
       int general_work(int noutput_items,

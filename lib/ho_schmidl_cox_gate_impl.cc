@@ -28,14 +28,6 @@
 
 namespace gr {
   namespace hnez_ofdm {
-    ho_schmidl_cox_gate::sptr
-    ho_schmidl_cox_gate::make(int fft_len, int cp_len, float rel_pw_lo, float rel_pw_hi, double sample_rate)
-    {
-      return gnuradio::get_initial_sptr
-        (new ho_schmidl_cox_gate_impl(fft_len, cp_len, rel_pw_lo, rel_pw_hi, sample_rate));
-    }
-
-
     ho_schmidl_cox_gate_impl::d_energy_history_t::d_energy_history_t(size_t fft_len)
       : len_window(fft_len/2),
         idx(0),
@@ -72,24 +64,33 @@ namespace gr {
       reference-= hist_reference[idx];
     }
 
-    /*
-     * The private constructor
-     */
+    ho_schmidl_cox_gate::sptr
+    ho_schmidl_cox_gate::make(int fft_len, int cp_len, float rel_pw_lo, float rel_pw_hi)
+    {
+      return gnuradio::get_initial_sptr
+        (new ho_schmidl_cox_gate_impl(fft_len, cp_len, rel_pw_lo, rel_pw_hi));
+    }
+
     ho_schmidl_cox_gate_impl::ho_schmidl_cox_gate_impl(int fft_len, int cp_len,
-                                                       float rel_pw_lo, float rel_pw_hi,
-                                                       double sample_rate)
+                                                       float rel_pw_lo, float rel_pw_hi)
       : gr::block("ho_schmidl_cox_gate",
                   gr::io_signature::make(1, 1, sizeof(gr_complex)),
                   gr::io_signature::make(1, 1, sizeof(gr_complex) * fft_len)),
-      d_sample_rate(sample_rate),
       d_lengths({.fft=fft_len, .cp=cp_len, .preamble=fft_len/2}),
       d_relative_thresholds({.low=rel_pw_lo, .high=rel_pw_hi}),
       d_energy_history(fft_len),
       d_power_peak({.am_inside=false, .relative_power=0, .energy=0, .abs_idx=0}),
       d_fq_compensation({.phase_acc=1, .phase_rot=1}),
-      d_am_aligned(false)
+      d_am_aligned(false),
+      d_frame_id(0)
     {
+      // TODO: find out if the +1 is necessary
       set_history(fft_len + 1);
+
+      pmt::pmt_t frame_ack_port= pmt::mp("frame_ack");
+      message_port_register_in(frame_ack_port);
+      set_msg_handler(frame_ack_port,
+                      boost::bind(&ho_schmidl_cox_gate_impl::on_frame_ack, this, _1));
     }
 
     /*
@@ -99,6 +100,21 @@ namespace gr {
     {
     }
 
+    void
+    ho_schmidl_cox_gate_impl::on_frame_ack(pmt::pmt_t msg)
+    {
+      /* A later block can notify us, using this message port,
+       * that it has finished processing a frame and that
+       * we can stop outputting its symbols */
+
+      if(msg && pmt::is_number(msg)) {
+        uint64_t ack_id= pmt::to_uint64(msg);
+
+        if(ack_id == d_frame_id) {
+          d_am_aligned= false;
+        }
+      }
+    }
 
     void
     ho_schmidl_cox_gate_impl::forecast (int noutput_items, gr_vector_int &ninput_items_required)
@@ -124,12 +140,24 @@ namespace gr {
       int in_alignment= d_lengths.fft + d_lengths.cp;
       int out_alignment= d_lengths.fft;
 
+      /* idx_in is counted in samples
+       * idx_out is counted in output symbols (fft_len samples) */
       int idx_in=0, idx_out=0;
+
+      /* The loop makes sure there is always at least one complete symbol in
+       * the input buffer and space for one output symbol in the output buffer */
       while((idx_in < (len_in - in_alignment)) && (idx_out < len_out)) {
+
+        /* If we are currently synchronized to a frame:
+         * write it to the output buffer. */
         if(d_am_aligned) {
           /* Fast forward the frequency compensation over the
            * cyclic prefix */
           d_fq_compensation.phase_acc*= pow(d_fq_compensation.phase_rot, d_lengths.cp);
+
+          /* The phase accumulator might degenerate because of
+           * accumulated rounding errors. Make sure it stays normalized. */
+          d_fq_compensation.phase_acc/= abs(d_fq_compensation.phase_acc);
 
           /* Frequency shift and output the symbol but not the
            * cyclic prefix */
@@ -142,15 +170,13 @@ namespace gr {
           idx_out++;
         }
 
-        int idx_in_new= -1;
-
         for(int idx_win=idx_in;
             idx_win < (idx_in + in_alignment);
             idx_win++) {
 
           // Add next item that slides into the window
-          d_energy_history.update(in[idx_win - d_lengths.preamble],
-                                  in[idx_win - d_lengths.fft]);
+          d_energy_history.update(in[idx_win],
+                                  in[idx_win + d_lengths.preamble]);
 
           /* - power_detect keeps track of the power of the time-shifted
            *   input sigal times the unshifted signal.
@@ -183,7 +209,6 @@ namespace gr {
               (relative_power > d_relative_thresholds.high)) {
 
               d_am_aligned= false;
-
               d_power_peak.am_inside= true;
 
               d_power_peak.relative_power= 0;
@@ -215,21 +240,25 @@ namespace gr {
                  * of peaks for some time. */
                 d_energy_history.reset();
 
-                /* The preamble was shifted by the phase of energy in
-                 * d_lengths.preamble, the following lines calculate the
+                /* The preamble was shifted by the phase of d_power_peak.energy in
+                 * d_lengths.preamble samples times, the following lines calculate the
                  * phase shift per sample, invert it and store it
                  * for later frequency offset compensation. */
                 gr_complex rot_per_sample= pow(d_power_peak.energy,
-                                                    1.0f/d_lengths.preamble);
+                                               1.0f/d_lengths.preamble);
 
                 gr_complex norm_rot_per_sample= rot_per_sample / abs(rot_per_sample);
 
                 d_fq_compensation.phase_rot= conj(norm_rot_per_sample);
 
-                /* The phase accumulator might degenerate because of
-                 * accumulated rounding errors. Make sure it stays normalized */
-                d_fq_compensation.phase_acc/= abs(d_fq_compensation.phase_acc);
+                /* Add a tag to the output stream to notify the following
+                 * blocks of the new frame*/
+                d_frame_id++;
+                add_item_tag(0, nitems_written(0),
+                             pmt::mp("frame_id"),
+                             pmt::from_uint64(d_frame_id));
 
+                /* Jump back to the start of the preamble */
                 idx_in= idx_in_new;
               }
             }
