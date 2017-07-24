@@ -70,8 +70,8 @@ class qa_ho_schmidl_cox_gate (gr_unittest.TestCase):
         cp_len= 20
         dat_len= 100000
         frame_len= 5
-        frame_offs= (700, 50000)
-        
+        frame_offs= (9000, 50000)
+
         rnd= np.random.RandomState(0)
 
         dat= self.random_complex(rnd, 0.05, dat_len)
@@ -86,10 +86,10 @@ class qa_ho_schmidl_cox_gate (gr_unittest.TestCase):
 
             print('frame:', off, '-', off+len(frame))
 
-        #dat*= np.exp(1j * np.linspace(0, 0.003 * dat_len, dat_len))
+        dat*= np.exp(1j * np.linspace(0, 0.003 * dat_len, dat_len))
 
         dat_src= blocks.vector_source_c(dat, False, 1, [])
-        gate= hnez_ofdm.ho_schmidl_cox_gate(fft_len, cp_len, 0.25, 0.35)
+        gate= hnez_ofdm.ho_schmidl_cox_gate(fft_len, cp_len, 0.3, 0.4)
         dat_sink= blocks.vector_sink_c(fft_len)
 
         self.tb.connect((dat_src, 0), (gate, 0))
@@ -110,7 +110,7 @@ class qa_ho_schmidl_cox_gate (gr_unittest.TestCase):
             pfftf= np.fft.fft(preamble_f)
 
             #print(', '.join(str(abs(s)) for s in pfftf))
-            
+
 
 if __name__ == '__main__':
     gr_unittest.run(qa_ho_schmidl_cox_gate, "qa_ho_schmidl_cox_gate.xml")

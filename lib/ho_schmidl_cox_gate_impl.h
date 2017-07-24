@@ -42,24 +42,24 @@ namespace gr {
 
       struct d_energy_history_t{
       private:
-        size_t len_window;
-        size_t idx;
-        bool ready;
-        
-        std::unique_ptr<gr_complex[]> hist_detect;
-        std::unique_ptr<float[]> hist_reference;
-        
+        const size_t history_len;
+        const std::unique_ptr<gr_complex[]> history;
+
+        size_t history_idx;
+
+        float acc_ref;
         gr_complex acc_detect;
-        float acc_reference;
+
+        bool ready;
 
       public:
         d_energy_history_t(size_t fft_len);
-        
-        void update(gr_complex now, gr_complex old);
+
+        void update(gr_complex now);
         void reset();
 
-        float relative_power();
-        gr_complex energy();
+        gr_complex det_energy_raw();
+        float det_power_relative();
       } d_energy_history;
 
       struct {

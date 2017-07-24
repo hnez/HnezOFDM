@@ -29,9 +29,8 @@
 namespace gr {
   namespace hnez_ofdm {
     ho_schmidl_cox_gate_impl::d_energy_history_t::d_energy_history_t(size_t fft_len)
-      : len_window(fft_len/2),
-        hist_detect(new gr_complex[fft_len/2]),
-        hist_reference(new float[fft_len/2])
+      : history(new gr_complex[fft_len]),
+        history_len(fft_len)
     {
       reset();
     }
@@ -39,45 +38,59 @@ namespace gr {
     void
     ho_schmidl_cox_gate_impl::d_energy_history_t::reset()
     {
-      for(size_t i=0; i<len_window; i++) {
-        hist_detect[i]= 0;
-        hist_reference[i]= 0;
+      for(size_t i=0; i<history_len; i++) {
+        history[i]= 0;
       }
 
-      acc_reference= 0;
+      history_idx= 0;
+
+      acc_ref= 0;
       acc_detect= 0;
 
-      idx= 0;
       ready= false;
     }
 
     void
-    ho_schmidl_cox_gate_impl::d_energy_history_t::update(gr_complex now, gr_complex old)
+    ho_schmidl_cox_gate_impl::d_energy_history_t::update(gr_complex now)
     {
-      hist_detect[idx]= now * conj(old);
-      hist_reference[idx]= norm(now);
+      gr_complex pop= history[history_idx];
+      gr_complex mid= history[(history_idx + history_len/2) % history_len];
 
-      acc_detect+= hist_detect[idx];
-      acc_reference+= hist_reference[idx];
+      // Update reference energy
+      float push_ref= norm(now);
+      float pop_ref= norm(pop);
 
-      idx= (idx + 1) % len_window;
-      ready= ready || (idx == 0);
+      acc_ref+= push_ref - pop_ref;
 
-      acc_detect-= hist_detect[idx];
-      acc_reference-= hist_reference[idx];
+      // Update detection energy
+      gr_complex push_detect= now * conj(mid);
+      gr_complex pop_detect= mid * conj(pop);
+
+      acc_detect+= push_detect - pop_detect;
+
+      // Update index
+      history[history_idx]= now;
+      history_idx= (history_idx + 1) % history_len;
+
+      // Signal readieness if the history is filled
+      ready= ready || !history_idx;
     }
 
     gr_complex
-    ho_schmidl_cox_gate_impl::d_energy_history_t::energy()
+    ho_schmidl_cox_gate_impl::d_energy_history_t::det_energy_raw()
     {
       return (ready ? acc_detect : 0);
     }
 
     float
-    ho_schmidl_cox_gate_impl::d_energy_history_t::relative_power()
+    ho_schmidl_cox_gate_impl::d_energy_history_t::det_power_relative()
     {
-      if(acc_reference > 0) {
-        return abs(energy()) / acc_reference;
+      if(acc_ref > 0) {
+        /* The window over which acc_ref is calculated is twice as
+         * large as the window over which acc_detect is calculated.
+         * The 2 normalizes the energies to yield the relative power. */
+
+        return (2 * abs(det_energy_raw()) / acc_ref);
       }
       else {
         return 0;
@@ -198,15 +211,18 @@ namespace gr {
                                           &d_fq_compensation.phase_acc,
                                           out_alignment);
           */
+
+          /*
           fprintf(stderr, "memcpy(%ld, %ld, %ld);\n",
                   idx_out + nitems_written(0),
                   idx_in + d_lengths.cp + nitems_read(0),
                   sizeof(gr_complex) * out_alignment);
-          
+          */
+
           memcpy(&out[idx_out * out_alignment],
                  &in[idx_in + d_lengths.cp],
                  sizeof(gr_complex) * out_alignment);
-          
+
           idx_out++;
         }
 
@@ -220,10 +236,9 @@ namespace gr {
           /* Add next item that slides into the window
            * TODO: this might read out of bounds if
            * in_alignment == d_lengths.fft */
-          d_energy_history.update(in[idx_win + d_lengths.preamble],
-                                  in[idx_win + d_lengths.fft]);
+          d_energy_history.update(in[idx_win + d_lengths.fft]);
 
-          float relative_power= d_energy_history.relative_power();
+          float relative_power= d_energy_history.det_power_relative();
 
           /* The Peaks in relative_power look something like the ACII-Art below:
            *
@@ -250,9 +265,14 @@ namespace gr {
           }
 
           if (d_power_peak.am_inside) {
+            /*
+            fprintf(stderr, "Power @ %ld: %f\n",
+                    nitems_read(0) + idx_win,
+                    relative_power);*/
+
             if (relative_power > d_power_peak.relative_power) {
               d_power_peak.relative_power= relative_power;
-              d_power_peak.energy= d_energy_history.energy();
+              d_power_peak.energy= d_energy_history.det_energy_raw();
               d_power_peak.abs_idx= nitems_read(0) + idx_win;
             }
 
@@ -297,8 +317,6 @@ namespace gr {
                 /* Jump back to the start of the preamble */
                 do_realign= true;
                 d_am_aligned= true;
-
-                fprintf(stderr, "frame_id %ld, @ %li\n", d_frame_id, d_power_peak.abs_idx);
               }
             }
           }
