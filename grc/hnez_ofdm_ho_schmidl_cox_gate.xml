@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <block>
-  <name>ho_schmidl_cox_gate</name>
+  <name>Schmidl-Cox Gate</name>
   <key>hnez_ofdm_ho_schmidl_cox_gate</key>
   <category>[Hnez OFDM]</category>
   <import>import hnez_ofdm</import>
@@ -19,13 +19,13 @@
   </param>
 
   <param>
-    <name>Relative power low threshold</name>
+    <name>Rel power low</name>
     <key>rel_pw_lo</key>
     <type>float</type>
   </param>
 
   <param>
-    <name>Relative power high threshold</name>
+    <name>Rel power high</name>
     <key>rel_pw_hi</key>
     <type>float</type>
   </param>

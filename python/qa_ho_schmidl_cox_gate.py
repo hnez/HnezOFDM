@@ -25,7 +25,6 @@ from gnuradio import gr, gr_unittest
 from gnuradio import blocks
 import hnez_ofdm_swig as hnez_ofdm
 
-from random import Random
 import numpy as np
 
 
@@ -37,28 +36,6 @@ class qa_ho_schmidl_cox_gate (gr_unittest.TestCase):
     def tearDown (self):
         self.tb = None
 
-    def gen_frame (self, rnd, fft_len, cp_len, num_syms):
-        def fd_symbols():
-            constellations= np.array((1+1j, 1-1j, -1+1j, -1-1j))
-
-            preamble= np.zeros(fft_len, np.complex64)
-            preamble[::2]= rnd.choice(constellations * 2**0.5, fft_len/2)
-
-            yield preamble
-
-            for i in range(num_syms):
-                yield rnd.choice(constellations, fft_len)
-
-        def td_symbols():
-            for fd_sym in fd_symbols():
-                td_sym= np.fft.ifft(fd_sym)
-
-                sym= np.concatenate((td_sym[-cp_len:], td_sym))
-
-                yield sym
-
-        return np.concatenate(tuple(td_symbols()))
-
     def random_complex(self, rnd, width, length):
         amplitudes= rnd.normal(0, width, length)
         phases= rnd.uniform(-np.pi, np.pi, length)
@@ -66,30 +43,36 @@ class qa_ho_schmidl_cox_gate (gr_unittest.TestCase):
         return amplitudes * np.exp(1j * phases)
 
     def test_001_t (self):
-        fft_len= 1024
-        cp_len= 20
-        dat_len= 100000
-        frame_len= 5
-        frame_offs= (9000, 50000)
-
         rnd= np.random.RandomState(0)
 
-        dat= self.random_complex(rnd, 0.05, dat_len)
+        pad_len= 9000
+        fft_len= 1024
+        cp_len= 32
 
-        frames= list(
-            self.gen_frame(rnd, fft_len, cp_len, frame_len)
-            for off in frame_offs
+        ph_rot= 0.2 / fft_len
+
+        preamble_halves= self.random_complex(rnd, 1, fft_len/2)
+        preamble= np.concatenate((preamble_halves, preamble_halves))
+
+        test_symbol= self.random_complex(rnd, 1, fft_len)
+
+        frame= np.concatenate((
+            preamble[-cp_len:], preamble, test_symbol[-cp_len:], test_symbol
+        ))
+
+        noise_pre= self.random_complex(rnd, 0.5, pad_len)
+        noise_during= self.random_complex(rnd, 0.0001, len(frame))
+        noise_post= self.random_complex(rnd, 0.5, pad_len)
+
+        sent= np.concatenate((noise_pre, frame + noise_during, noise_post))
+        sent*= np.exp(1j * np.linspace(
+            0,
+            ph_rot * len(sent),
+            len(sent))
         )
 
-        for (frame, off) in zip(frames, frame_offs):
-            dat[off:off+len(frame)]+= frame
-
-            print('frame:', off, '-', off+len(frame))
-
-        dat*= np.exp(1j * np.linspace(0, 0.003 * dat_len, dat_len))
-
-        dat_src= blocks.vector_source_c(dat, False, 1, [])
-        gate= hnez_ofdm.ho_schmidl_cox_gate(fft_len, cp_len, 0.3, 0.4)
+        dat_src= blocks.vector_source_c(sent, False, 1, [])
+        gate= hnez_ofdm.ho_schmidl_cox_gate(fft_len, cp_len, 0.8, 0.9)
         dat_sink= blocks.vector_sink_c(fft_len)
 
         self.tb.connect((dat_src, 0), (gate, 0))
@@ -97,20 +80,21 @@ class qa_ho_schmidl_cox_gate (gr_unittest.TestCase):
 
         self.tb.run ()
 
-        out_dat= dat_sink.data()
+        received= dat_sink.data()
 
-        for (f, t) in zip(frames, dat_sink.tags()):
-            off= t.offset * fft_len
-            preamble_t= out_dat[off:off+fft_len]
-            preamble_f= f[cp_len:cp_len+fft_len]
+        snd_preamble_fd= np.fft.fft(preamble)
+        rcv_preamble_fd= np.fft.fft(received[:fft_len])
 
-            print('off: {}'.format(off))
+        preamble_d= ((abs(rcv_preamble_fd) - abs(snd_preamble_fd))**2).sum() / fft_len
 
-            pfftt= np.fft.fft(preamble_t)
-            pfftf= np.fft.fft(preamble_f)
+        self.assertLess(preamble_d, 10e-6)
 
-            #print(', '.join(str(abs(s)) for s in pfftf))
+        snd_symbol_fd= np.fft.fft(test_symbol)
+        rcv_symbol_fd= np.fft.fft(received[fft_len:fft_len*2])
 
+        symbol_d= ((abs(rcv_symbol_fd) - abs(snd_symbol_fd))**2).sum() / fft_len
+
+        self.assertLess(symbol_d, 10e-6)
 
 if __name__ == '__main__':
     gr_unittest.run(qa_ho_schmidl_cox_gate, "qa_ho_schmidl_cox_gate.xml")

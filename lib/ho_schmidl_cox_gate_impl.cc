@@ -167,69 +167,38 @@ namespace gr {
       /* We will later use negative indices to refer to
        * elements in the history */
       const gr_complex *in= &in_history[history() - 1];
-      
+
       int len_in= ninput_items[0];
       int len_out= noutput_items;
       int in_alignment= d_lengths.fft + d_lengths.cp;
       int out_alignment= d_lengths.fft;
 
-      /***************************************************
-       * TODO: remove me!
-       ***************************************************/
-      memset(out, 0, sizeof(gr_complex) * out_alignment * len_out);
-      
       /* idx_in is counted in samples
        * idx_out is counted in output symbols (fft_len samples) */
       int idx_in=0, idx_out=0;
 
       /* The loop makes sure there is always at least one complete symbol in
        * the input buffer and space for one output symbol in the output buffer */
-      while((idx_in < (len_in - in_alignment)) && (idx_out < len_out)) {
-        /*
-         * fprintf(stderr, "Entered loop with:\n");
-         * fprintf(stderr, " idx_in: %i\n", idx_in);
-         * fprintf(stderr, " idx_out: %i\n", idx_out);
-         * fprintf(stderr, " abs_in: %ld\n", nitems_read(0));
-         * fprintf(stderr, " abs_out: %ld\n", nitems_written(0));
-         * fprintf(stderr, " d_am_aligned: %s\n", d_am_aligned ? "true" : "false");
-         * fprintf(stderr, " d_power_peak.am_inside: %s\n",
-         *         d_power_peak.am_inside ? "true" : "false");
-         */
+      while((idx_in < (len_in - in_alignment - 1)) && (idx_out < len_out)) {
 
         /* If we are currently synchronized to a frame:
-         * write it to the output buffer. */
+         * write a symbol from it to the output buffer. */
         if(d_am_aligned) {
-          /* Fast forward the frequency compensation over the
-           * cyclic prefix */
-          d_fq_compensation.phase_acc*= pow(d_fq_compensation.phase_rot, d_lengths.cp);
-
           /* The phase accumulator might degenerate because of
            * accumulated rounding errors. Make sure it stays normalized. */
           d_fq_compensation.phase_acc/= abs(d_fq_compensation.phase_acc);
 
           /* Frequency shift and output the symbol but not the
            * cyclic prefix */
-          /*
           volk_32fc_s32fc_x2_rotator_32fc(&out[idx_out * out_alignment],
-                                          &in[idx_in + d_lengths.cp],
+                                          &in[idx_in],
                                           d_fq_compensation.phase_rot,
                                           &d_fq_compensation.phase_acc,
                                           out_alignment);
-          */
 
-          /*
-          fprintf(stderr, "memcpy(%ld, %ld, %ld);\n",
-                  idx_out + nitems_written(0),
-                  idx_in + d_lengths.cp + nitems_read(0),
-                  sizeof(gr_complex) * out_alignment);
-          */
-
-          gr_complex *target= &out[idx_out * out_alignment];
-          const gr_complex *source= &in[idx_in + d_lengths.cp];
-          
-          for(int i=0; i<out_alignment; i++) {
-            target[i]= source[i];
-          }          
+          /* Fast forward the frequency compensation over the
+           * next cyclic prefix */
+          d_fq_compensation.phase_acc*= pow(d_fq_compensation.phase_rot, d_lengths.cp);
 
           idx_out++;
         }
@@ -241,25 +210,22 @@ namespace gr {
             idx_win < (idx_in + in_alignment);
             idx_win++) {
 
-          /* Add next item that slides into the window
-           * TODO: this might read out of bounds if
-           * in_alignment == d_lengths.fft */
+          // Add next item that slides into the window
           d_energy_history.update(in[idx_win + d_lengths.fft]);
-
           float relative_power= d_energy_history.det_power_relative();
 
           /* The Peaks in relative_power look something like the ACII-Art below:
            *
            *        ~~~~
-           *       /    \        --- d_rel_pw_hi
+           *       /    \        --- d_relative_thresholds.high
            *      /      \
-           *     /        \      --- d_rel_pw_lo
+           *     /        \      --- d_relative_thresholds.low
            * ~~~           ~~~~~
            *         |
-           *         +---------- --- d_rel_pw_max
+           *         +---------- --- d_power_peak
            *
-           * There should be some hysteresis between d_rel_pw_hi and
-           * d_rel_pw_lo to prevent detecting the same peak twice.
+           * There should be some hysteresis between d_relative_thresholds.high and
+           * d_relative_thresholds.low to prevent detecting the same peak twice.
            * The plateau is due to the cyclic prefixing and its length
            * is influenced by the length of the channels impulse response
            * and the cyclic prefix length  */
@@ -273,11 +239,6 @@ namespace gr {
           }
 
           if (d_power_peak.am_inside) {
-            /*
-            fprintf(stderr, "Power @ %ld: %f\n",
-                    nitems_read(0) + idx_win,
-                    relative_power);*/
-
             if (relative_power > d_power_peak.relative_power) {
               d_power_peak.relative_power= relative_power;
               d_power_peak.energy= d_energy_history.det_energy_raw();
@@ -298,16 +259,19 @@ namespace gr {
               }
               else {
                 /* Theoretically we would now have to go backwards from
-                 * idx_in to idx_in_new and update the energy estimation.
+                 * idx_in to idx_in_realigned and update the energy estimation.
                  * But we actually do not want to detect the same peak again.
                  * Calling reset() will flush the history and prevent detection
-                 * of peaks for some time. */
+                 * of peaks until it is filled again.
+                 * This is a bit hackish, i know. */
                 d_energy_history.reset();
 
                 /* The preamble was shifted by the phase of d_power_peak.energy in
                  * d_lengths.preamble samples times, the following lines calculate the
                  * phase shift per sample, invert it and store it
-                 * for later frequency offset compensation. */
+                 * for later frequency offset compensation.
+                 * For large frequency offsets this can become abiguos,
+                 * to determine the maximum offset is left as an exercise to the reader. */
                 gr_complex rot_per_sample= pow(d_power_peak.energy,
                                                1.0f/d_lengths.preamble);
 
@@ -317,10 +281,20 @@ namespace gr {
 
                 /* Add a tag to the output stream to notify the following
                  * blocks of the new frame*/
+                uint64_t idx_abs= nitems_written(0) + idx_out;
+
                 d_frame_id++;
-                add_item_tag(0, nitems_written(0) + idx_out,
+                add_item_tag(0, idx_abs,
                              pmt::mp("frame_id"),
                              pmt::from_uint64(d_frame_id));
+
+                add_item_tag(0, idx_abs,
+                             pmt::mp("preamble_power"),
+                             pmt::from_double(d_power_peak.relative_power));
+
+                add_item_tag(0, idx_abs,
+                             pmt::mp("fq_compensation"),
+                             pmt::from_double(arg(d_fq_compensation.phase_rot)));
 
                 /* Jump back to the start of the preamble */
                 do_realign= true;
@@ -334,10 +308,8 @@ namespace gr {
       }
 
       consume_each (idx_in);
-
-      // Tell runtime system how many output items we produced.
       return idx_out;
     }
 
-  } /* namespace hnez_ofdm */
-} /* namespace gr */
+  }
+}
