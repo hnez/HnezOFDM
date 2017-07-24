@@ -225,9 +225,10 @@ namespace gr {
           */
 
           gr_complex *target= &out[idx_out * out_alignment];
+          const gr_complex *source= &in[idx_in + d_lengths.cp];
           
           for(int i=0; i<out_alignment; i++) {
-            target[i]= i;
+            target[i]= source[i];
           }          
 
           idx_out++;
