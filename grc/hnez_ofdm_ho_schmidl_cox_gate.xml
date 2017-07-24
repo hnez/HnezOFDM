@@ -32,7 +32,7 @@
 
   <sink>
     <name>in</name>
-    <type>float</type>
+    <type>complex</type>
   </sink>
 
   <sink>
@@ -43,7 +43,7 @@
 
   <source>
     <name>out</name>
-    <type>float</type>
+    <type>complex</type>
     <vlen>$fft_len</vlen>
   </source>
 </block>
