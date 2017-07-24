@@ -167,12 +167,17 @@ namespace gr {
       /* We will later use negative indices to refer to
        * elements in the history */
       const gr_complex *in= &in_history[history() - 1];
-
+      
       int len_in= ninput_items[0];
       int len_out= noutput_items;
       int in_alignment= d_lengths.fft + d_lengths.cp;
       int out_alignment= d_lengths.fft;
 
+      /***************************************************
+       * TODO: remove me!
+       ***************************************************/
+      memset(out, 0, sizeof(gr_complex) * out_alignment * len_out);
+      
       /* idx_in is counted in samples
        * idx_out is counted in output symbols (fft_len samples) */
       int idx_in=0, idx_out=0;
@@ -219,9 +224,11 @@ namespace gr {
                   sizeof(gr_complex) * out_alignment);
           */
 
-          memcpy(&out[idx_out * out_alignment],
-                 &in[idx_in + d_lengths.cp],
-                 sizeof(gr_complex) * out_alignment);
+          gr_complex *target= &out[idx_out * out_alignment];
+          
+          for(int i=0; i<out_alignment; i++) {
+            target[i]= i;
+          }          
 
           idx_out++;
         }

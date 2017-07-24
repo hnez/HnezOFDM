@@ -112,7 +112,7 @@
     <key>analog_noise_source_x</key>
     <param>
       <key>amp</key>
-      <value>0.25</value>
+      <value>0.025</value>
     </param>
     <param>
       <key>alias</key>
@@ -1517,11 +1517,11 @@
     </param>
     <param>
       <key>rel_pw_hi</key>
-      <value>0.95</value>
+      <value>0.5</value>
     </param>
     <param>
       <key>rel_pw_lo</key>
-      <value>0.9</value>
+      <value>0.4</value>
     </param>
   </block>
   <block>
