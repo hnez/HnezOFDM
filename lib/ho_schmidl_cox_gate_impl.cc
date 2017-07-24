@@ -30,7 +30,6 @@ namespace gr {
   namespace hnez_ofdm {
     ho_schmidl_cox_gate_impl::d_energy_history_t::d_energy_history_t(size_t fft_len)
       : len_window(fft_len/2),
-        idx(0),
         hist_detect(new gr_complex[fft_len/2]),
         hist_reference(new float[fft_len/2])
     {
@@ -40,13 +39,16 @@ namespace gr {
     void
     ho_schmidl_cox_gate_impl::d_energy_history_t::reset()
     {
-      detect= 0;
-      reference= 0;
-
       for(size_t i=0; i<len_window; i++) {
         hist_detect[i]= 0;
         hist_reference[i]= 0;
       }
+
+      acc_reference= 0;
+      acc_detect= 0;
+
+      idx= 0;
+      ready= false;
     }
 
     void
@@ -55,13 +57,31 @@ namespace gr {
       hist_detect[idx]= now * conj(old);
       hist_reference[idx]= norm(now);
 
-      detect+= hist_detect[idx];
-      reference+= hist_reference[idx];
+      acc_detect+= hist_detect[idx];
+      acc_reference+= hist_reference[idx];
 
       idx= (idx + 1) % len_window;
+      ready= ready || (idx == 0);
 
-      detect-= hist_detect[idx];
-      reference-= hist_reference[idx];
+      acc_detect-= hist_detect[idx];
+      acc_reference-= hist_reference[idx];
+    }
+
+    gr_complex
+    ho_schmidl_cox_gate_impl::d_energy_history_t::energy()
+    {
+      return (ready ? acc_detect : 0);
+    }
+
+    float
+    ho_schmidl_cox_gate_impl::d_energy_history_t::relative_power()
+    {
+      if(acc_reference > 0) {
+        return abs(energy()) / acc_reference;
+      }
+      else {
+        return 0;
+      }
     }
 
     ho_schmidl_cox_gate::sptr
@@ -147,6 +167,16 @@ namespace gr {
       /* The loop makes sure there is always at least one complete symbol in
        * the input buffer and space for one output symbol in the output buffer */
       while((idx_in < (len_in - in_alignment)) && (idx_out < len_out)) {
+        /*
+         * fprintf(stderr, "Entered loop with:\n");
+         * fprintf(stderr, " idx_in: %i\n", idx_in);
+         * fprintf(stderr, " idx_out: %i\n", idx_out);
+         * fprintf(stderr, " abs_in: %ld\n", nitems_read(0));
+         * fprintf(stderr, " abs_out: %ld\n", nitems_written(0));
+         * fprintf(stderr, " d_am_aligned: %s\n", d_am_aligned ? "true" : "false");
+         * fprintf(stderr, " d_power_peak.am_inside: %s\n",
+         *         d_power_peak.am_inside ? "true" : "false");
+         */
 
         /* If we are currently synchronized to a frame:
          * write it to the output buffer. */
@@ -161,34 +191,39 @@ namespace gr {
 
           /* Frequency shift and output the symbol but not the
            * cyclic prefix */
+          /*
           volk_32fc_s32fc_x2_rotator_32fc(&out[idx_out * out_alignment],
                                           &in[idx_in + d_lengths.cp],
                                           d_fq_compensation.phase_rot,
                                           &d_fq_compensation.phase_acc,
                                           out_alignment);
-
+          */
+          fprintf(stderr, "memcpy(%ld, %ld, %ld);\n",
+                  idx_out + nitems_written(0),
+                  idx_in + d_lengths.cp + nitems_read(0),
+                  sizeof(gr_complex) * out_alignment);
+          
+          memcpy(&out[idx_out * out_alignment],
+                 &in[idx_in + d_lengths.cp],
+                 sizeof(gr_complex) * out_alignment);
+          
           idx_out++;
         }
+
+        bool do_realign= false;
+        int64_t idx_in_realigned= 0;
 
         for(int idx_win=idx_in;
             idx_win < (idx_in + in_alignment);
             idx_win++) {
 
-          // Add next item that slides into the window
-          d_energy_history.update(in[idx_win],
-                                  in[idx_win + d_lengths.preamble]);
+          /* Add next item that slides into the window
+           * TODO: this might read out of bounds if
+           * in_alignment == d_lengths.fft */
+          d_energy_history.update(in[idx_win + d_lengths.preamble],
+                                  in[idx_win + d_lengths.fft]);
 
-          /* - power_detect keeps track of the power of the time-shifted
-           *   input sigal times the unshifted signal.
-           *   This contains peaks if both are correlated but is also
-           *   dependent on the overall input power.
-           * - power_ref keeps track of the overall input power
-           * - relative_power is power_detect normalized by the mean input
-           *   power in the analyzed window. */
-          float power_detect= abs(d_energy_history.detect) / d_lengths.preamble;
-          float power_ref= d_energy_history.reference / d_lengths.preamble;
-          float relative_power= (power_ref > 0) ? (power_detect / power_ref) : 0.0;
-
+          float relative_power= d_energy_history.relative_power();
 
           /* The Peaks in relative_power look something like the ACII-Art below:
            *
@@ -217,20 +252,21 @@ namespace gr {
           if (d_power_peak.am_inside) {
             if (relative_power > d_power_peak.relative_power) {
               d_power_peak.relative_power= relative_power;
-              d_power_peak.energy= d_energy_history.detect;
+              d_power_peak.energy= d_energy_history.energy();
               d_power_peak.abs_idx= nitems_read(0) + idx_win;
             }
 
             if (relative_power < d_relative_thresholds.low) {
               d_power_peak.am_inside= false;
 
-              int64_t idx_win_abs= nitems_read(0) + idx_win;
-              int64_t idx_in_new= d_power_peak.abs_idx - idx_win_abs;
+              idx_in_realigned= d_power_peak.abs_idx - (int64_t)nitems_read(0);
 
-              if((idx_in_new < (history() - 1)) || (idx_in > len_in)) {
+              int64_t history_start= -((int64_t)history() - 1);
+
+              if((idx_in_realigned < history_start) || (idx_in_realigned > len_in)) {
                 fprintf(stderr,
-                        "schmid_cox_gate: realignment failed, idx_in_new=%li is out of bounds\n",
-                        idx_in_new);
+                        "schmid_cox_gate: realignment failed, idx_in_realigned=%li is out of bounds\n",
+                        idx_in_realigned);
               }
               else {
                 /* Theoretically we would now have to go backwards from
@@ -254,16 +290,21 @@ namespace gr {
                 /* Add a tag to the output stream to notify the following
                  * blocks of the new frame*/
                 d_frame_id++;
-                add_item_tag(0, nitems_written(0),
+                add_item_tag(0, nitems_written(0) + idx_out,
                              pmt::mp("frame_id"),
                              pmt::from_uint64(d_frame_id));
 
                 /* Jump back to the start of the preamble */
-                idx_in= idx_in_new;
+                do_realign= true;
+                d_am_aligned= true;
+
+                fprintf(stderr, "frame_id %ld, @ %li\n", d_frame_id, d_power_peak.abs_idx);
               }
             }
           }
         }
+
+        idx_in= do_realign ? idx_in_realigned : (idx_in + in_alignment);
       }
 
       consume_each (idx_in);

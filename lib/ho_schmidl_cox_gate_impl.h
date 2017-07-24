@@ -44,16 +44,22 @@ namespace gr {
       private:
         size_t len_window;
         size_t idx;
+        bool ready;
+        
         std::unique_ptr<gr_complex[]> hist_detect;
         std::unique_ptr<float[]> hist_reference;
+        
+        gr_complex acc_detect;
+        float acc_reference;
 
       public:
-        gr_complex detect;
-        float reference;
-
         d_energy_history_t(size_t fft_len);
+        
         void update(gr_complex now, gr_complex old);
         void reset();
+
+        float relative_power();
+        gr_complex energy();
       } d_energy_history;
 
       struct {
